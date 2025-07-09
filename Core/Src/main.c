@@ -17,8 +17,10 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+extern "C" {
 #include "main.h"
 #include "cmsis_os.h"
+}
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -44,9 +46,15 @@
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  "defaultTask",           // name
+  0,                      // attr_bits
+  nullptr,                // cb_mem
+  0,                      // cb_size
+  nullptr,                // stack_mem
+  128 * 4,                // stack_size
+  (osPriority_t) osPriorityNormal,  // priority
+  0,                      // tz_module
+  0                       // reserved
 };
 /* USER CODE BEGIN PV */
 
@@ -150,8 +158,8 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {};
 
   /** Configure the main internal regulator output voltage
   */
@@ -197,6 +205,7 @@ void SystemClock_Config(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
+  (void)argument;  // Mark parameter as intentionally unused
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
