@@ -75,3 +75,12 @@ The build system creates static libraries for:
 - FreeRTOS is configured for ARM Cortex-M4F with heap_4 memory management
 - Generated code requires C11 or higher standard
 - Build artifacts are placed in `cmake-build-debug/` directory
+
+### C++17 Port
+
+The `main.c` file is configured to compile as C++17 while maintaining the `.c` extension for STM32CubeMX compatibility:
+
+- **CMake Configuration**: Uses `set_source_files_properties()` to force C++ compilation
+- **Language Standards**: C++17 with appropriate compiler flags (`-fno-rtti`, `-fno-exceptions`, `-fno-threadsafe-statics`)
+- **C Compatibility**: Headers wrapped in `extern "C"` blocks to maintain C linkage
+- **Struct Initialization**: Modified to use positional initialization instead of designated initializers
