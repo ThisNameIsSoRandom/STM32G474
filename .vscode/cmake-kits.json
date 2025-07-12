@@ -1,0 +1,23 @@
+[
+  {
+    "name": "STM32CubeCLT 1.18.0",
+    "description": "STM32CubeCLT 1.18.0 ARM GCC Toolchain",
+    "compilers": {
+      "C": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
+      "CXX": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe"
+    },
+    "environmentVariables": {
+      "PATH": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin;C:/ST/STM32CubeCLT_1.18.0/Ninja/bin;C:/ST/STM32CubeCLT_1.18.0/STLink-gdb-server/bin;C:/ST/STM32CubeCLT_1.18.0/STM32CubeProgrammer/bin;C:/ST/STM32CubeCLT_1.18.0/CMake/bin;C:/ST/STM32CubeCLT_1.18.0/jre/bin;C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.openocd.win32_2.4.200.202505051030/tools/bin;${env:PATH}",
+      "STM32_TOOLCHAIN_PATH": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32",
+      "STM32_CUBE_CLT_PATH": "C:/ST/STM32CubeCLT_1.18.0",
+      "STM32_SVD_PATH": "C:/ST/STM32CubeCLT_1.18.0/STMicroelectronics_CMSIS_SVD",
+      "OPENOCD_PATH": "C:/ST/STM32CubeIDE_1.19.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.openocd.win32_2.4.200.202505051030/tools/bin"
+    },
+    "preferredGenerator": {
+      "name": "Ninja"
+    },
+    "cmakeSettings": {
+      "CMAKE_MAKE_PROGRAM": "C:/ST/STM32CubeCLT_1.18.0/Ninja/bin/ninja.exe"
+    }
+  }
+]

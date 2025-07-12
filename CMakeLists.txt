@@ -1,76 +1,22 @@
 cmake_minimum_required(VERSION 3.22)
 
-#
-# This file is generated only once,
-# and is not re-generated if converter is called multiple times.
-#
-# User is free to modify the file as much as necessary
-#
-
-# Setup compiler settings
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
-
-# Setup C++ compiler settings
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
-
-# Define the build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug")
+# Select board (default to custom-G474)
+if(NOT DEFINED BOARD)
+    #set(BOARD "custom-G474" CACHE STRING "Target board name")
 endif()
 
-# Set the project name
-set(CMAKE_PROJECT_NAME STM32G474)
+set(BOARD "nucleo-H755ZI-Q")
+# Include board-specific toolchain file
+if(BOARD STREQUAL "custom-G474")
+    include(boards/custom-G474/cmake/gcc-arm-none-eabi.cmake)
+elseif(BOARD STREQUAL "nucleo-H755ZI-Q")
+    include(boards/nucleo-H755ZI-Q/cmake/gcc-arm-none-eabi.cmake)
+else()
+    message(FATAL_ERROR "Unknown board: ${BOARD}")
+endif()
 
-# Include toolchain file
-include("cmake/gcc-arm-none-eabi.cmake")
+# Define the project - toolchain file should be passed via -DCMAKE_TOOLCHAIN_FILE
+project(STM32MultiBoard)
 
-# Enable compile command to ease indexing with e.g. clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-
-# Core project settings
-project(${CMAKE_PROJECT_NAME})
-message("Build type: " ${CMAKE_BUILD_TYPE})
-
-# Enable CMake support for ASM, C, and C++ languages
-enable_language(C CXX ASM)
-
-# Create an executable object type
-add_executable(${CMAKE_PROJECT_NAME})
-
-# Add STM32CubeMX generated sources
-add_subdirectory(cmake/stm32cubemx)
-
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined library search paths
-)
-
-# Add sources to executable
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
-)
-
-# Force main.c to be compiled as C++
-set_source_files_properties(Core/Src/main.c PROPERTIES LANGUAGE CXX)
-
-# Add include paths
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined include paths
-)
-
-# Add project symbols (macros)
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined symbols
-)
-
-# Add linked libraries
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    stm32cubemx
-
-    # Add user defined libraries
-)
+# Build board executables (each board sets its own toolchain and builds app)
+add_subdirectory(boards/${BOARD})

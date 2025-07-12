@@ -77,3 +77,16 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
+# STM32 Generated Files
+**/Drivers/CMSIS/
+**/Drivers/STM32*/
+**/Middlewares/
+**/Core/Inc/
+**/Core/Src/
+build/
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+
