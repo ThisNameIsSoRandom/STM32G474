@@ -1,0 +1,17 @@
+# Toolchain build artifacts
+build/
+cmake-build-*/
+
+# Generated files
+*.o
+*.obj
+*.a
+*.lib
+
+# CMake cache
+CMakeCache.txt
+CMakeFiles/
+
+# Temporary files
+*.tmp
+*.temp

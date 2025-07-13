@@ -1,1 +1,0 @@
-/mnt/c/Users/Naidrok/CLionProjects/STM32G474/boards/custom-G474/STM32G474XX_FLASH.ld

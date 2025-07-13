@@ -1,1 +1,0 @@
-/mnt/c/Users/Naidrok/CLionProjects/STM32G474/boards/custom-G474/startup_stm32g474xx.s

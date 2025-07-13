@@ -1,0 +1,28 @@
+# App-specific build artifacts
+build/
+cmake-build-*/
+
+# Generated CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+*.cmake
+!CMakeLists.txt
+!*.cmake.in
+
+# Static libraries
+*.a
+*.lib
+
+# Object files
+*.o
+*.obj
+
+# Test artifacts
+**/Testing/
+
+# Generated configuration
+appConfig.cmake
+appTargets.cmake
+*.cmake.in

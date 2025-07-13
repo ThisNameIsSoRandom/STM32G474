@@ -9,6 +9,13 @@
 .idea/**/dictionaries
 .idea/**/shelf
 
+# IDE generated files
+.idea/.name
+.idea/**/debugServers/SEGGER_J_Link.xml
+
+# Claude Code settings (entire directory)
+.claude/
+
 # AWS User-specific
 .idea/**/aws.xml
 
@@ -77,16 +84,70 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
-# STM32 Generated Files
-**/Drivers/CMSIS/
-**/Drivers/STM32*/
+# VSCode settings - generally ignored
+.vscode/
+
+# Exception: nucleo-H755ZI-Q VSCode debug configuration
+# CLion has limited support for STM32H7 dual-core debugging and lacks:
+# - Proper multicore debugging workflows for asymmetric dual-core MCUs
+# - Advanced OpenOCD integration for simultaneous CM7+CM4 debugging  
+# - STM32CubeCLT toolchain integration for STM32H755 HSEM synchronization
+# - FreeRTOS dual-core thread debugging across both cores
+# VSCode with cortex-debug extension provides superior STM32H7 multicore support
+!boards/nucleo-H755ZI-Q/.vscode/
+
+# STM32 Generated Files (excluding Core directories which contain application code)
+**/Drivers/
 **/Middlewares/
-**/Core/Inc/
-**/Core/Src/
+
+# Build outputs and artifacts
 build/
+**/build/
 *.elf
 *.hex
 *.bin
 *.map
 *.list
+*.o
+*.obj
+*.a
+*.lib
+
+# CMake generated files and build directories
+cmake-build-*/
+**/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+**/compile_commands.json
+
+# CMake dependencies (FetchContent, ExternalProject)
+_deps/
+**/_deps/
+
+# CMake temporary and cache files
+**/CMakeScratch/
+**/CMakeConfigureLog.yaml
+**/cmake.check_cache
+**/rules.ninja
+**/build.ninja
+
+# Test outputs
+Testing/
+**/Testing/
+
+# STM32CubeMX generated intermediate files
+**/*-stamp/
+**/*-prefix/
+**/*-subbuild/
+
+# Debug session files
+*.dwf3work
+
+# Platform-specific temporary files
+*.tmp
+*.temp
+**/tmp/
 

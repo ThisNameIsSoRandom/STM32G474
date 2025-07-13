@@ -1,0 +1,55 @@
+# Board-specific build artifacts
+build/
+**/build/
+
+# CMake build directories  
+cmake-build-*/
+**/cmake-build-*/
+
+# Generated firmware files
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+
+# Object files and libraries
+*.o
+*.obj
+*.a
+*.lib
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+**/compile_commands.json
+
+# Dependencies
+_deps/
+**/_deps/
+
+# Ninja build files
+*.ninja
+**/build.ninja
+**/rules.ninja
+
+# Test outputs
+Testing/
+**/Testing/
+
+# STM32CubeMX build temporaries
+**/*-stamp/
+**/*-prefix/
+**/*-subbuild/
+
+# Debug files
+*.dwf3work
+
+# STM32CubeMX generated files
+.mxproject
+
+# Temporary files
+*.tmp
+*.temp
