@@ -46,10 +46,14 @@ enable_language(C CXX ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+# Include app from parent directory
+add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
+
 # Add STM32CubeMX generated sources first
 add_subdirectory(cmake/stm32cubemx)
 
-# App library disabled - removed app build dependencies
+# Add FreeRTOS
+include(cmake/freertos.cmake)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -77,8 +81,17 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
+    freertos_kernel
     # Add user defined libraries
 )
+
+# Link with app target using linker groups to resolve weak symbols
+if(TARGET app)
+    target_link_libraries(${CMAKE_PROJECT_NAME} app)
+    message(STATUS "Linking with app target using linker groups")
+else()
+    message(STATUS "app target not found, building without app")
+endif()
 
 
 

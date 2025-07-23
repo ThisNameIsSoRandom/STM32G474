@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
+# Set system information for cross-compilation when building standalone
+if(NOT CMAKE_SYSTEM_NAME)
+    set(CMAKE_SYSTEM_NAME Generic)
+    set(CMAKE_SYSTEM_PROCESSOR arm)
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+endif()
+
 project(app
         VERSION 0.0.0
         LANGUAGES C CXX ASM
@@ -25,14 +32,16 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/Inc
 )
 
-# Add subdirectories for RTT and Tasks
+# Add subdirectories for RTT, Tasks, and BQ40Z80
 add_subdirectory(Src/RTT)
 add_subdirectory(Src/Tasks)
+add_subdirectory(Src/BQ40Z80)
 
 # Link with subdirectory libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC
     RTT
     Tasks
+    BQ40Z80
 )
 
 # Inherit compile options from parent project
@@ -57,7 +66,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # Export targets to build directory for immediate use
-export(TARGETS ${PROJECT_NAME} RTT Tasks
+export(TARGETS ${PROJECT_NAME} RTT Tasks BQ40Z80
     NAMESPACE ${PROJECT_NAME}::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
 )

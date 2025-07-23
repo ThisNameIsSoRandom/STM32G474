@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.16)
+
+# Set system information for cross-compilation
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 project(Tasks)
 
@@ -9,6 +14,7 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(${PROJECT_NAME} PRIVATE
     smbus_task.cpp
     uart_task.cpp
+    battery_monitor_task.cpp
     hal_implementations.cpp
 )
 
@@ -22,13 +28,18 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 # Add header files
 target_sources(${PROJECT_NAME} PUBLIC
         Inc/freertos_tasks.h
+        Inc/battery_monitor_task.h
 )
 
 # No wydmuszka linking needed - platform provides HAL implementations
 
-# Tasks need RTT (FreeRTOS provided by platform)
+# Tasks need RTT and BQ40Z80 library
 if(TARGET RTT)
     target_link_libraries(${PROJECT_NAME} PUBLIC RTT)
+endif()
+
+if(TARGET BQ40Z80)
+    target_link_libraries(${PROJECT_NAME} PUBLIC BQ40Z80)
 endif()
 
 # C++ files are now native .cpp - no forced compilation needed
