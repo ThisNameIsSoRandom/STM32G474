@@ -6,6 +6,7 @@
   */
 
 #include "hal_types.h"
+#include "freertos_types.h"
 #include "SEGGER_RTT.h"
 
 extern "C" {
@@ -21,7 +22,7 @@ void smbusTask(void *pvParameters)
     SEGGER_RTT_printf(0, "SMBus task started!\n\r");
     
     // Wait a bit for system to stabilize
-    HAL_Delay_MS(100);
+    vTaskDelay(100);
     
     for(;;)
     {
@@ -46,7 +47,7 @@ void smbusTask(void *pvParameters)
         }
         
         // Wait before next iteration
-        HAL_Delay_MS(2000);
+        vTaskDelay(2000);
     }
 }
 

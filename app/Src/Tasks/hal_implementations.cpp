@@ -6,6 +6,7 @@
  */
 
 #include "hal_types.h"
+#include "freertos_types.h"
 #include "SEGGER_RTT.h"
 #define __weak __attribute__((used))  __attribute__((weak))
 
@@ -70,6 +71,30 @@ __weak HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart)
     (void)huart;
     SEGGER_RTT_printf(0, "WARNING: HAL_UART_GetState not implemented by platform\n\r");
     return HAL_UART_STATE_READY;
+}
+
+// ===============================
+// Weak FreeRTOS implementations for Tasks library
+// ===============================
+
+/**
+ * @brief Weak implementation of vTaskDelete
+ */
+__weak void vTaskDelete(TaskHandle_t xTaskToDelete)
+{
+    (void)xTaskToDelete;
+    SEGGER_RTT_printf(0, "WARNING: vTaskDelete not implemented by platform - cannot delete task\n\r");
+    // Cannot actually delete task without FreeRTOS
+}
+
+/**
+ * @brief Weak implementation of vTaskDelay
+ */
+__weak void vTaskDelay(const TickType_t xTicksToDelay)
+{
+    (void)xTicksToDelay;
+    SEGGER_RTT_printf(0, "WARNING: vTaskDelay not implemented by platform - no delay applied\n\r");
+    // No delay in hollow implementation
 }
 
 }

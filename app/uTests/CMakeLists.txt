@@ -1,46 +1,42 @@
-cmake_minimum_required(VERSION 3.22)
+# Unit Tests for App Library - Embedded Testing
+cmake_minimum_required(VERSION 3.16)
 
-project(uTests LANGUAGES CXX)
+# This will be cross-compiled for ARM MCU, not host testing
+# Set system information for cross-compilation
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
-# C++ Standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project(app_uTests CXX)
 
-# Find or fetch Google Test
-find_package(GTest QUIET)
-if(NOT GTest_FOUND)
-    include(FetchContent)
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
-    )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-endif()
+# Create test library (not executable - will be linked into firmware)
+add_library(${PROJECT_NAME} STATIC)
 
-# Create static library
-add_library(uTests STATIC
-    src/test_runner.cpp
-    tests/sample_test.cpp
+# Add test source files
+target_sources(${PROJECT_NAME} PRIVATE
+    test_runner.cpp
+    test_bq40z80_basic.cpp
+    test_bq40z80_advanced.cpp
 )
 
 # Include directories
-target_include_directories(uTests 
-    PUBLIC include
+target_include_directories(${PROJECT_NAME} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Inc
 )
 
-# Link Google Test
-if(GTest_FOUND)
-    target_link_libraries(uTests 
-        PUBLIC 
-            GTest::gtest 
-            GTest::gtest_main
-    )
-else()
-    target_link_libraries(uTests 
-        PUBLIC 
-            gtest 
-            gtest_main
-    )
-endif()
+# Don't link with or build dependencies here - they will be provided by the main app target
+# The uTBoards build will link this with the main app target which includes all dependencies
+
+# Set C++ standard for embedded
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+)
+
+# Compile options for embedded
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -fno-exceptions
+    -fno-rtti
+    -fno-threadsafe-statics
+)

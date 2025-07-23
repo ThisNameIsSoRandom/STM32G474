@@ -15,6 +15,7 @@ extern "C" {
 /* Task function prototypes */
 void smbusTask(void *pvParameters);
 void uartTask(void *pvParameters);
+void batteryMonitorTask(void *pvParameters);
 
 #ifdef __cplusplus
 }
