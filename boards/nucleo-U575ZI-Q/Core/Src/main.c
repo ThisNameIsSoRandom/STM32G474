@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "battery_monitor_task.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "logging.h"
@@ -99,7 +100,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C2_SMBUS_Init();
+  MX_I2C2_Init();
   MX_ICACHE_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
@@ -107,7 +108,7 @@ int main(void)
 
   /* Create SMBus task */
   TaskHandle_t smbusTaskHandle = NULL;
-  BaseType_t xReturned = xTaskCreate(smbusTask, "smbusTask", 1024, NULL, tskIDLE_PRIORITY + 2, &smbusTaskHandle);
+  BaseType_t xReturned = xTaskCreate(batteryMonitorTask, "smbusTask", 1024, NULL, tskIDLE_PRIORITY + 2, &smbusTaskHandle);
   
   if(xReturned != pdPASS)
   {
@@ -117,7 +118,7 @@ int main(void)
 
   /* Create UART task */
   TaskHandle_t uartTaskHandle = NULL;
-  xReturned = xTaskCreate(uartTask, "uartTask", 1024, NULL, tskIDLE_PRIORITY + 2, &uartTaskHandle);
+  //xReturned = xTaskCreate(uartTask, "uartTask", 1024, NULL, tskIDLE_PRIORITY + 2, &uartTaskHandle);
   
   if(xReturned != pdPASS)
   {
@@ -128,8 +129,6 @@ int main(void)
   /* Start scheduler */
   vTaskStartScheduler();
   /* USER CODE END 2 */
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -212,6 +211,12 @@ static void SystemPower_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// HAL_Delay_MS implementation for app library
+extern "C" void HAL_Delay_MS(uint32_t ms)
+{
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}
 
 /* USER CODE END 4 */
 
