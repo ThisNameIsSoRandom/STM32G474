@@ -92,8 +92,8 @@ int main(void)
   
   // Create tasks
   xTaskCreate(smbusTask, "smbusTask", 256, NULL, 1, NULL);
-  xTaskCreate(uartTask, "uartTask", 256, NULL, 1, NULL);
-  // xTaskCreate(batteryMonitorTask, "batteryTask", 512, NULL, 2, NULL); // TODO: Fix header issue
+  //xTaskCreate(uartTask, "uartTask", 256, NULL, 1, NULL);
+  xTaskCreate(batteryMonitorTask, "batteryTask", 512, NULL, 2, NULL); // TODO: Fix header issue
 
   /* USER CODE END 2 */
 

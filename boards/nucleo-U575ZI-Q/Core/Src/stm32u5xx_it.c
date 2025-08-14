@@ -55,7 +55,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern SMBUS_HandleTypeDef hsmbus2;
+extern I2C_HandleTypeDef hi2c2;
 extern TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN EV */
@@ -140,9 +140,10 @@ void UsageFault_Handler(void)
   }
 }
 
-/* FreeRTOS handlers - removed to avoid conflicts with FreeRTOS implementations
- * SVC_Handler, PendSV_Handler, and SysTick_Handler are provided by FreeRTOS
- */
+/**
+  * @brief This function handles System service call via SWI instruction.
+  */
+// SVC_Handler is provided by FreeRTOS port
 
 /**
   * @brief This function handles Debug monitor.
@@ -156,6 +157,16 @@ void DebugMon_Handler(void)
 
   /* USER CODE END DebugMonitor_IRQn 1 */
 }
+
+/**
+  * @brief This function handles Pendable request for system service.
+  */
+// PendSV_Handler is provided by FreeRTOS port
+
+/**
+  * @brief This function handles System tick timer.
+  */
+// SysTick_Handler is provided by FreeRTOS port
 
 /******************************************************************************/
 /* STM32U5xx Peripheral Interrupt Handlers                                    */
@@ -172,7 +183,7 @@ void I2C2_EV_IRQHandler(void)
   /* USER CODE BEGIN I2C2_EV_IRQn 0 */
 
   /* USER CODE END I2C2_EV_IRQn 0 */
-  HAL_SMBUS_EV_IRQHandler(&hsmbus2);
+  HAL_I2C_EV_IRQHandler(&hi2c2);
   /* USER CODE BEGIN I2C2_EV_IRQn 1 */
 
   /* USER CODE END I2C2_EV_IRQn 1 */
@@ -186,7 +197,7 @@ void I2C2_ER_IRQHandler(void)
   /* USER CODE BEGIN I2C2_ER_IRQn 0 */
 
   /* USER CODE END I2C2_ER_IRQn 0 */
-  HAL_SMBUS_ER_IRQHandler(&hsmbus2);
+  HAL_I2C_ER_IRQHandler(&hi2c2);
   /* USER CODE BEGIN I2C2_ER_IRQn 1 */
 
   /* USER CODE END I2C2_ER_IRQn 1 */

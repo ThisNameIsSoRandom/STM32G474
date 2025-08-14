@@ -26,17 +26,60 @@ extern "C" {
 }
 
 /**
- * @brief Weak implementation of SMBus Master Transmit IT
+ * @brief Weak implementation of I2C Master Transmit
  */
-__weak HAL_StatusTypeDef HAL_SMBUS_Master_Transmit_IT(SMBUS_HandleTypeDef *hsmbus, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t XferOptions)
+__weak HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
-    (void)hsmbus;
+    (void)hi2c;
     (void)DevAddress;
     (void)pData;
     (void)Size;
-    (void)XferOptions;
-    SEGGER_RTT_printf(0, "WARNING: HAL_SMBUS_Master_Transmit_IT not implemented by platform\n\r");
+    (void)Timeout;
+    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_Master_Transmit not implemented by platform\n\r");
     return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of I2C Master Receive
+ */
+__weak HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout)
+{
+    (void)hi2c;
+    (void)DevAddress;
+    (void)pData;
+    (void)Size;
+    (void)Timeout;
+    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_Master_Receive not implemented by platform\n\r");
+    return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of I2C Get State
+ */
+__weak HAL_I2C_StateTypeDef HAL_I2C_GetState(I2C_HandleTypeDef *hi2c)
+{
+    (void)hi2c;
+    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_GetState not implemented by platform\n\r");
+    return HAL_I2C_STATE_READY;
+}
+
+/**
+ * @brief Weak implementation of I2C DeInit
+ */
+__weak HAL_StatusTypeDef HAL_I2C_DeInit(I2C_HandleTypeDef *hi2c)
+{
+    (void)hi2c;
+    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_DeInit not implemented by platform\n\r");
+    return HAL_OK;
+}
+
+
+/**
+ * @brief Weak implementation of I2C Init
+ */
+__weak void MX_I2C2_Init(void)
+{
+    SEGGER_RTT_printf(0, "WARNING: MX_I2C2_Init not implemented by platform\n\r");
 }
 
 /**
