@@ -20,7 +20,7 @@ HAL_StatusTypeDef Driver::readWord(uint8_t cmd, uint16_t& data) {
                      cmd, writeAddress_, readAddress_);
     
     // Send command using I2C blocking mode
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c2, 
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
                                                        &cmd, 
                                                        1, 
@@ -38,7 +38,7 @@ HAL_StatusTypeDef Driver::readWord(uint8_t cmd, uint16_t& data) {
     SEGGER_RTT_printf(0, "BQ40Z80: Buffer before read: 0x%02X 0x%02X\n", buffer[0], buffer[1]);
     
     // Read 2 bytes of data from the device using I2C blocking mode
-    status = HAL_I2C_Master_Receive(&hi2c2,
+    status = HAL_I2C_Master_Receive(i2c_handle_,
                                    readAddress_,
                                    buffer,
                                    2,
@@ -71,7 +71,7 @@ HAL_StatusTypeDef Driver::writeWord(uint8_t cmd, uint16_t data) {
     SEGGER_RTT_printf(0, "BQ40Z80: Writing word 0x%04X to cmd=0x%02X\n", data, cmd);
     
     // Single transmission with command and data using I2C blocking mode
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c2, 
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
                                                        buffer, 
                                                        3, 
@@ -91,7 +91,7 @@ HAL_StatusTypeDef Driver::readBlock(uint8_t cmd, std::vector<uint8_t>& data) {
     SEGGER_RTT_printf(0, "BQ40Z80: Reading block from cmd=0x%02X\n", cmd);
     
     // First, send the command to indicate which block to read using I2C blocking mode
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c2, 
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
                                                        &cmd, 
                                                        1, 
@@ -106,7 +106,7 @@ HAL_StatusTypeDef Driver::readBlock(uint8_t cmd, std::vector<uint8_t>& data) {
     HAL_Delay_MS(10);
     
     // Read the block data using I2C blocking mode (first byte is length, followed by data)
-    status = HAL_I2C_Master_Receive(&hi2c2,
+    status = HAL_I2C_Master_Receive(i2c_handle_,
                                    readAddress_,
                                    buffer,
                                    33,  // Max possible: 1 length byte + 32 data bytes
@@ -156,7 +156,7 @@ HAL_StatusTypeDef Driver::writeBlock(uint8_t cmd, const std::vector<uint8_t>& da
     // Use I2C blocking mode for reliable transmission
     SEGGER_RTT_printf(0, "BQ40Z80: Using I2C blocking mode for block write\n");
     
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c2, 
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
                                                        buffer, 
                                                        totalLength,
@@ -185,7 +185,7 @@ HAL_StatusTypeDef Driver::manufacturerCommand(uint16_t command) {
     
     SEGGER_RTT_printf(0, "BQ40Z80: Sending MAC command 0x%04X to ManufacturerAccess (big-endian)\\n", command);
     
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c2, 
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
                                                        buffer, 
                                                        3,
@@ -453,17 +453,17 @@ void Driver::resetI2C() {
     SEGGER_RTT_printf(0, "BQ40Z80: Attempting I2C recovery\n");
     
     // Get current I2C state
-    HAL_I2C_StateTypeDef state = HAL_I2C_GetState(&hi2c2);
+    HAL_I2C_StateTypeDef state = HAL_I2C_GetState(i2c_handle_);
     SEGGER_RTT_printf(0, "BQ40Z80: Current I2C state: %d\n", state);
     
     if (state != HAL_I2C_STATE_READY) {
         SEGGER_RTT_printf(0, "BQ40Z80: Attempting I2C reset\n");
-        HAL_I2C_DeInit(&hi2c2);
+        HAL_I2C_DeInit(i2c_handle_);
         HAL_Delay_MS(50);
         MX_I2C2_Init(); // Reinitialize I2C
         HAL_Delay_MS(50);
         
-        state = HAL_I2C_GetState(&hi2c2);
+        state = HAL_I2C_GetState(i2c_handle_);
         SEGGER_RTT_printf(0, "BQ40Z80: Post-reset I2C state: %d\n", state);
     }
 }

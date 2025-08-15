@@ -29,6 +29,11 @@ typedef long BaseType_t;
 #define pdPASS  (pdTRUE)
 #define pdFAIL  (pdFALSE)
 
+// Tick conversion macros - Only define if real FreeRTOS not present
+#ifndef pdMS_TO_TICKS
+#define pdMS_TO_TICKS(xTimeInMs) ((TickType_t)(((TickType_t)(xTimeInMs) * 1000) / 1000))
+#endif
+
 #endif /* INC_FREERTOS_H */
 
 // ===============================

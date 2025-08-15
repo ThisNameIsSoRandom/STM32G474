@@ -37,12 +37,20 @@ add_subdirectory(Src/RTT)
 add_subdirectory(Src/Tasks)
 add_subdirectory(Src/BQ40Z80)
 
+# Add tests subdirectory if unit tests are enabled
+if(ENABLE_UNIT_TESTS)
+    add_subdirectory(tests)
+endif()
+
 # Link with subdirectory libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC
     RTT
     Tasks
     BQ40Z80
 )
+
+# Note: app_tests library will be linked at the executable level, not here
+# This avoids circular dependencies
 
 # Inherit compile options from parent project
 target_compile_options(${PROJECT_NAME} PRIVATE
@@ -66,6 +74,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # Export targets to build directory for immediate use
+# Only export core libraries, not test library (to avoid circular dependency)
 export(TARGETS ${PROJECT_NAME} RTT Tasks BQ40Z80
     NAMESPACE ${PROJECT_NAME}::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"

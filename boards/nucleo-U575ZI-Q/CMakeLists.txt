@@ -40,6 +40,9 @@ enable_language(C CXX ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+# Enable unit tests for this platform (must be before app subdirectory)
+set(ENABLE_UNIT_TESTS ON CACHE BOOL "Enable unit tests" FORCE)
+
 # Include parent project to access app target
 add_subdirectory(../../ ${CMAKE_BINARY_DIR}/STM32G474)
 
@@ -67,6 +70,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+    
+    # Enable unit tests for this platform
+    ENABLE_UNIT_TESTS=1
 )
 
 # Add linked libraries
@@ -81,6 +87,18 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 if(TARGET app)
     target_link_libraries(${CMAKE_PROJECT_NAME} app)
     message(STATUS "Linking with app target using linker groups")
+    
+    # Link with test library if it exists
+    if(TARGET app_tests)
+        # Use function wrapping to override HAL functions with mocks
+        target_link_libraries(${CMAKE_PROJECT_NAME} 
+            -Wl,--whole-archive app_tests -Wl,--no-whole-archive
+            -Wl,--wrap=HAL_I2C_Master_Transmit
+            -Wl,--wrap=HAL_I2C_Master_Receive
+            -Wl,--wrap=HAL_I2C_Mem_Write
+            -Wl,--wrap=HAL_I2C_Mem_Read)
+        message(STATUS "Linking with app_tests target using HAL function wrapping")
+    endif()
 else()
     message(STATUS "app target not found, building without app")
 endif()

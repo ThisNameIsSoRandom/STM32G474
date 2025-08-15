@@ -1,3 +1,20 @@
+/**
+ * @file bq40z80.cpp
+ * @brief BQ40Z80 Battery Gauge Driver - High-Level Implementation
+ * 
+ * This file implements the high-level user interface for the BQ40Z80 driver.
+ * It provides type-safe read/write operations, automatic error recovery,
+ * and transparent fallback mechanisms when standard SBS commands fail.
+ * 
+ * ## Implementation Notes:
+ * - All read operations first attempt standard SBS commands
+ * - If SBS returns 0x16CC (device frozen), falls back to ManufacturerBlockAccess
+ * - Automatic recovery sequences are attempted during initialization
+ * - Debug output via SEGGER RTT can be disabled in production builds
+ * 
+ * @see bq40z80_lowlevel.cpp for SMBus protocol implementation
+ */
+
 #include "BQ40Z80/bq40z80.h"
 #include "hal_types.h"
 #include "freertos_types.h"
@@ -11,49 +28,78 @@ namespace BQ40Z80 {
 // HIGH LEVEL USER INTERFACE IMPLEMENTATION
 // ============================================================================
 
-Driver::Driver(const Config& config) 
-    : config_(config)
-    , writeAddress_(config.deviceAddress << 1)
-    , readAddress_((config.deviceAddress << 1) | 0x01) {
+/**
+ * Constructor initializes the driver with I2C handle and configuration.
+ * The I2C addresses are pre-calculated from the 7-bit device address
+ * for efficiency during communication.
+ */
+Driver::Driver(I2C_HandleTypeDef* i2c_handle, const Config& config) 
+    : i2c_handle_(i2c_handle)
+    , config_(config)
+    , writeAddress_(config.deviceAddress << 1)        // Convert to 8-bit write address
+    , readAddress_((config.deviceAddress << 1) | 0x01) // Convert to 8-bit read address
+{
+    // Pre-calculated addresses avoid bit shifting during I2C transactions
+    // I2C handle is stored for all future communication operations
 }
 
+/**
+ * Provides standard configuration that works with most BQ40Z80 implementations.
+ * The default address 0x0B is specified in the BQ40Z80 datasheet.
+ */
 Config Driver::defaultConfig() {
     Config config;
-    config.deviceAddress = 0x0B;              // BQ40Z80 default 7-bit address (0x16 write, 0x17 read in 8-bit)
-    config.commandDelayMs = 1;             // 1ms between commands
+    config.deviceAddress = 0x0B;   // Standard BQ40Z80 7-bit address
+    config.commandDelayMs = 1;     // Minimum delay to avoid overwhelming the device
     return config;
 }
 
+/**
+ * Initialization performs a comprehensive device check and recovery sequence.
+ * The BQ40Z80 can enter a "frozen" state where all SBS registers return 0x16CC.
+ * This typically occurs when the device is sealed or has encountered an error.
+ * 
+ * Recovery sequence:
+ * 1. Device reset to clear any error states
+ * 2. Unseal commands using default keys (0x0414, 0x3672)
+ * 3. Verification that normal operation has resumed
+ */
 HAL_StatusTypeDef Driver::init() {
     SEGGER_RTT_printf(0, "BQ40Z80: Initializing battery gauge at address 0x0B\n");
     
-    // Test basic communication
+    // Test basic communication by reading BatteryMode register
     uint16_t batteryMode;
     HAL_StatusTypeDef status = readWord(0x03, batteryMode);
     
     if (status == HAL_OK) {
+        // Expected value for normal operation (may vary by configuration)
         if (batteryMode == 0x6081) {
             SEGGER_RTT_printf(0, "BQ40Z80: Device functional - BatteryMode: 0x%04X\n", batteryMode);
             return HAL_OK;
-        } else if (batteryMode == 0x16CC) {
+        } 
+        // 0x16CC indicates device is frozen/sealed
+        else if (batteryMode == 0x16CC) {
             SEGGER_RTT_printf(0, "BQ40Z80: Device frozen - all SBS registers return 0x16CC\n");
             SEGGER_RTT_printf(0, "BQ40Z80: Attempting recovery sequence...\n");
             
-            // Try recovery commands
-            manufacturerCommand(0x0041); // Device Reset
-            HAL_Delay_MS(500);
-            manufacturerCommand(0x0414); // Unseal key 1
-            HAL_Delay_MS(10);
-            manufacturerCommand(0x3672); // Unseal key 2
-            HAL_Delay_MS(100);
+            // Step 1: Reset the device to clear error states
+            manufacturerCommand(0x0041); // MFA_DEVICE_RESET
+            HAL_Delay_MS(500);           // Allow time for reset to complete
             
-            // Test if recovery worked
+            // Step 2: Attempt to unseal using default keys
+            manufacturerCommand(0x0414); // Default unseal key part 1
+            HAL_Delay_MS(10);
+            manufacturerCommand(0x3672); // Default unseal key part 2
+            HAL_Delay_MS(100);           // Allow time for unseal to process
+            
+            // Step 3: Verify recovery was successful
             uint16_t testMode;
             if (readWord(0x03, testMode) == HAL_OK && testMode != 0x16CC) {
                 SEGGER_RTT_printf(0, "BQ40Z80: Recovery successful\n");
                 return HAL_OK;
             } else {
                 SEGGER_RTT_printf(0, "BQ40Z80: Recovery failed - device firmware corrupted\n");
+                // Continue anyway - ManufacturerBlockAccess may still work
             }
         }
     } else {
@@ -61,55 +107,72 @@ HAL_StatusTypeDef Driver::init() {
     }
     
     SEGGER_RTT_printf(0, "BQ40Z80: Initialization complete (limited functionality)\n");
-    return HAL_OK;
+    return HAL_OK; // Return OK to allow fallback mechanisms to work
 }
 
-// Read uint16_t values - try standard SBS first, fall back to ManufacturerAccess if needed
+/**
+ * Primary read function for 16-bit values implements automatic fallback logic.
+ * When the device is sealed or frozen, standard SBS commands return 0x16CC.
+ * In this case, we automatically fall back to ManufacturerBlockAccess (0x44)
+ * which can still retrieve data even when the device is sealed.
+ */
 HAL_StatusTypeDef Driver::read(Reading what, uint16_t& value) {
-    // First try standard SBS commands as per the reference library
+    // Attempt standard SBS read first (most efficient when device is unsealed)
     HAL_StatusTypeDef status = readWord(static_cast<uint8_t>(what), value);
     
     if (status == HAL_OK) {
-        // Check if we're getting a constant wrong value (0x16CC indicates sealed/wrong address)
+        // 0x16CC is a sentinel value indicating device is sealed/frozen
         if (value == 0x16CC) {
-            SEGGER_RTT_printf(0, "BQ40Z80: SBS register 0x%02X returned constant 0x16CC, trying MAC fallback\n", 
+            SEGGER_RTT_printf(0, "BQ40Z80: SBS register 0x%02X returned 0x16CC (device sealed), using MAC fallback\n", 
                              static_cast<uint8_t>(what));
             
-            // Try ManufacturerBlockAccess (0x44) since ManufacturerData (0x23) is frozen
-            SEGGER_RTT_printf(0, "BQ40Z80: Trying ManufacturerBlockAccess for register 0x%02X\n", 
-                             static_cast<uint8_t>(what));
+            // ManufacturerBlockAccess can read data even when device is sealed
             return manufacturerBlockAccessRead(static_cast<uint8_t>(what), value);
         }
         return HAL_OK;
     }
     
-    // If SBS command failed completely, try ManufacturerBlockAccess fallback
+    // If SBS failed entirely (communication error), still try MAC as last resort
     SEGGER_RTT_printf(0, "BQ40Z80: SBS command 0x%02X failed, trying ManufacturerBlockAccess\n", 
                      static_cast<uint8_t>(what));
     return manufacturerBlockAccessRead(static_cast<uint8_t>(what), value);
 }
 
-// Read int16_t values - using standard SMBus registers 
+/**
+ * Signed 16-bit read for current measurements.
+ * Current values are signed: positive = charging, negative = discharging.
+ * This function reuses the uint16_t read and performs proper sign extension.
+ */
 HAL_StatusTypeDef Driver::read(Reading what, int16_t& value) {
     uint16_t rawValue;
-    HAL_StatusTypeDef status = read(what, rawValue); // Use the uint16_t version with standard SMBus
+    HAL_StatusTypeDef status = read(what, rawValue);
     if (status == HAL_OK) {
+        // Cast preserves sign bit for two's complement representation
         value = static_cast<int16_t>(rawValue);
     }
     return status;
 }
 
-// Read uint8_t values - using standard SMBus registers
+/**
+ * 8-bit read for percentage values (state of charge).
+ * Many BQ40Z80 registers return 16-bit values where only the lower byte is used.
+ * This function extracts the relevant byte from the 16-bit read.
+ */
 HAL_StatusTypeDef Driver::read(Reading what, uint8_t& value) {
     uint16_t rawValue;
-    HAL_StatusTypeDef status = read(what, rawValue); // Use the uint16_t version with standard SMBus
+    HAL_StatusTypeDef status = read(what, rawValue);
     if (status == HAL_OK) {
+        // Extract lower byte (most percentage values are 0-100)
         value = static_cast<uint8_t>(rawValue & 0xFF);
     }
     return status;
 }
 
-// Read string values
+/**
+ * String read for manufacturer and device information.
+ * These values are stored as SMBus block data (up to 20 ASCII characters).
+ * The function handles null terminator removal for clean string output.
+ */
 HAL_StatusTypeDef Driver::read(Reading what, std::string& value) {
     std::vector<uint8_t> data;
     HAL_StatusTypeDef status;
@@ -117,10 +180,12 @@ HAL_StatusTypeDef Driver::read(Reading what, std::string& value) {
     switch (what) {
         case Reading::ManufacturerName:
         case Reading::DeviceName:
+            // Block read returns length byte followed by ASCII data
             status = readBlock(static_cast<uint8_t>(what), data);
             if (status == HAL_OK && !data.empty()) {
+                // Convert byte array to string
                 value.assign(data.begin(), data.end());
-                // Remove null terminator if present
+                // Remove null terminator if present for clean output
                 if (!value.empty() && value.back() == '\0') {
                     value.pop_back();
                 }
@@ -128,18 +193,22 @@ HAL_StatusTypeDef Driver::read(Reading what, std::string& value) {
             return status;
             
         default:
-            return HAL_ERROR;
+            return HAL_ERROR; // Only string-type readings supported
     }
 }
 
-// Read Status - try standard SBS first, then ManufacturerAccess fallback
+/**
+ * Decodes the BatteryStatus register into individual flags.
+ * The 16-bit status register contains multiple alarm and state indicators
+ * that are extracted into a human-readable Status structure.
+ */
 HAL_StatusTypeDef Driver::read(Reading what, Status& value) {
     if (what != Reading::BatteryStatus) {
         return HAL_ERROR;
     }
     
     uint16_t rawStatus;
-    // First try standard SBS BatteryStatus register
+    // Attempt to read BatteryStatus register (0x16)
     HAL_StatusTypeDef status = readWord(static_cast<uint8_t>(Reading::BatteryStatus), rawStatus);
     
     // If standard register returns constant 0x16CC, try ManufacturerBlockAccess fallback

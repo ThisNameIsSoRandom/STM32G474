@@ -9,9 +9,11 @@
   * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * Copyright (c) 2025 Raptors PŁ Poland.
+  * All rights reserved.
+  *
+  * This modified software is proprietary. All rights reserved.
+  * Original components licensed under SLA0048 terms in the LICENSE file.
   *
   ******************************************************************************
   */
@@ -32,6 +34,21 @@
 #include "logging.h"
 #include "SEGGER_RTT.h"
 #include "freertos_tasks.h"
+#include "i2c.h"
+
+// Unit test integration - declare as weak symbols so they can be overridden
+extern "C" __attribute__((weak)) void startUnitTests(void) {
+    // Weak implementation - does nothing if tests not linked
+    SEGGER_RTT_printf(0, "Unit tests not linked - skipping\n");
+}
+
+extern "C" __attribute__((weak)) void runTestsTask(void* pvParameters) {
+    (void)pvParameters;
+    // Weak implementation - just delete task if tests not linked
+    SEGGER_RTT_printf(0, "Test task not implemented - deleting task\n");
+    vTaskDelete(NULL);  // Use NULL instead of nullptr for C compatibility
+}
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,29 +121,48 @@ int main(void)
   MX_ICACHE_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  // Initialize logging system
   initLogging();
 
-  /* Create SMBus task */
-  TaskHandle_t smbusTaskHandle = NULL;
-  BaseType_t xReturned = xTaskCreate(batteryMonitorTask, "smbusTask", 1024, NULL, tskIDLE_PRIORITY + 2, &smbusTaskHandle);
+  SEGGER_RTT_printf(0, "\n=== STM32U575ZI-Q Platform Startup ===\n");
+  SEGGER_RTT_printf(0, "Platform: NUCLEO-U575ZI-Q\n");
+  SEGGER_RTT_printf(0, "MCU: STM32U575ZI Cortex-M33\n");
+  SEGGER_RTT_printf(0, "FreeRTOS: Enabled\n");
+  SEGGER_RTT_printf(0, "\n--- Creating Application Tasks ---\n");
+
+  /* Configure battery monitor task for STM32U575ZI-Q platform */
+  static BatteryTaskConfig battery_config = {
+      .i2c_handle = &hi2c2,                    // Use I2C2 peripheral on this platform
+      .device_address = BATTERY_DEFAULT_ADDRESS, // Standard BQ40Z80 address (0x0B)
+      .update_interval_ms = 3000,              // Read battery every 3 seconds
+      .task_name = "BatteryU575"               // Platform-specific task name
+  };
+
+  /* Create battery monitor task for BQ40Z80 management */
+  TaskHandle_t batteryTaskHandle = NULL;
+  BaseType_t xReturned = xTaskCreate(
+      batteryMonitorTask,           // Task function - battery monitoring
+      "Battery",                    // Task name
+      BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
+      &battery_config,              // Pass configuration as parameters
+      BATTERY_MONITOR_TASK_PRIORITY,// Task priority from configuration
+      &batteryTaskHandle            // Task handle
+  );
   
-  if(xReturned != pdPASS)
-  {
-    /* Task creation failed */
+  if(xReturned != pdPASS) {
+    SEGGER_RTT_printf(0, "ERROR: Failed to create battery monitor task\n");
     Error_Handler();
   }
+  SEGGER_RTT_printf(0, "Battery monitor task created successfully (I2C2, 3sec interval)\n");
 
-  /* Create UART task */
-  TaskHandle_t uartTaskHandle = NULL;
-  //xReturned = xTaskCreate(uartTask, "uartTask", 1024, NULL, tskIDLE_PRIORITY + 2, &uartTaskHandle);
+  /* UART task is currently disabled */
+  //TaskHandle_t uartTaskHandle = NULL;
+  //xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
   
-  if(xReturned != pdPASS)
-  {
-    /* Task creation failed */
-    Error_Handler();
-  }
+  SEGGER_RTT_printf(0, "\n--- Starting FreeRTOS Scheduler ---\n");
+  SEGGER_RTT_printf(0, "Application ready\n\n");
 
-  /* Start scheduler */
+  /* Start FreeRTOS scheduler */
   vTaskStartScheduler();
   /* USER CODE END 2 */
 
@@ -140,7 +176,10 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
+/* USER CODE BEGIN IGNORE C WARNINGS*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* USER CODE END IGNORE C WARNINGS*/
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -273,3 +312,6 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+/* USER CODE BEGIN IGNORE C WARNINGS*/
+#pragma GCC diagnostic pop
+/* USER CODE END IGNORE C WARNINGS*/
