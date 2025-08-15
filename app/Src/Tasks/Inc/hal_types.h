@@ -48,7 +48,8 @@ typedef struct UART_HandleTypeDef UART_HandleTypeDef;
 
 #endif /* HAL_MODULE_ENABLED */
 
-// I2C states - Always define these for function declarations
+// I2C states - Only define if real HAL not present
+#ifndef HAL_I2C_MODULE_ENABLED
 typedef enum
 {
   HAL_I2C_STATE_RESET             = 0x00U,
@@ -60,11 +61,13 @@ typedef enum
   HAL_I2C_STATE_TIMEOUT           = 0xA0U,
   HAL_I2C_STATE_ERROR             = 0xE0U
 } HAL_I2C_StateTypeDef;
+#endif /* HAL_I2C_MODULE_ENABLED */
 
 // ===============================
-// HAL Function Declarations - Always declare
+// HAL Function Declarations - Only declare if real HAL not present
 // ===============================
 
+#ifndef HAL_MODULE_ENABLED
 // External handles - platform provides these
 extern I2C_HandleTypeDef hi2c2;
 extern UART_HandleTypeDef huart2;
@@ -78,6 +81,7 @@ void MX_I2C2_Init(void);
 HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart);
+#endif /* HAL_MODULE_ENABLED */
 
 // FreeRTOS functions - platform will provide implementations
 void HAL_Delay_MS(uint32_t ms);
