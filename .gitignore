@@ -96,9 +96,99 @@ fabric.properties
 # VSCode with cortex-debug extension provides superior STM32H7 multicore support
 !boards/nucleo-H755ZI-Q/.vscode/
 
-# STM32 Generated Files (excluding Core directories which contain application code)
+# ============================================================================
+# STM32CubeMX Generated Files - Comprehensive Cleanup
+# ============================================================================
+# Strategy: Only track .ioc files + user code, ignore all CubeMX-generated content
+# Regeneration: Open *.ioc in STM32CubeMX, generate code, build immediately
+# Repository size reduction: ~40MB+ → ~5MB per board
+
+# STM32 HAL/LL Drivers and Middleware (MASSIVE - ~40MB+ per board)
 **/Drivers/
 **/Middlewares/
+
+# CubeMX System Files (Generated for each MCU)
+**/startup_*.s                   # Startup assembly files
+**/system_stm32*.c              # System clock and initialization
+**/stm32*xx_it.c                # Interrupt Service Routines
+**/stm32*xx_hal_msp.c           # HAL MSP (Hardware Abstraction Layer)
+**/stm32*xx_hal_timebase_*.c    # HAL timebase configuration
+**/syscalls.c                   # System call implementations
+**/sysmem.c                     # Memory management
+
+# CubeMX Peripheral Configuration Files (Pure Generated)
+**/gpio.c                       # GPIO pin configuration
+**/gpio.h                       # GPIO definitions
+**/i2c.c                        # I2C peripheral configuration
+**/i2c.h                        # I2C definitions
+**/spi.c                        # SPI peripheral configuration  
+**/spi.h                        # SPI definitions
+**/usart.c                      # UART/USART configuration
+**/usart.h                      # UART definitions
+**/uart.c                       # UART configuration
+**/uart.h                       # UART definitions
+**/tim.c                        # Timer configuration
+**/tim.h                        # Timer definitions
+**/adc.c                        # ADC configuration
+**/adc.h                        # ADC definitions
+**/dma.c                        # DMA configuration
+**/dma.h                        # DMA definitions
+**/can.c                        # CAN configuration
+**/can.h                        # CAN definitions
+**/fdcan.c                      # FDCAN configuration
+**/fdcan.h                      # FDCAN definitions
+**/rtc.c                        # RTC configuration
+**/rtc.h                        # RTC definitions
+**/iwdg.c                       # Independent Watchdog configuration
+**/iwdg.h                       # Independent Watchdog definitions
+**/wwdg.c                       # Window Watchdog configuration
+**/wwdg.h                       # Window Watchdog definitions
+**/rng.c                        # Random Number Generator configuration
+**/rng.h                        # Random Number Generator definitions
+**/crc.c                        # CRC configuration
+**/crc.h                        # CRC definitions
+**/flash.c                      # Flash memory configuration
+**/flash.h                      # Flash memory definitions
+**/pwr.c                        # Power management configuration
+**/pwr.h                        # Power management definitions
+**/rcc.c                        # Reset and Clock Control configuration
+**/rcc.h                        # Reset and Clock Control definitions
+
+# Additional U5xx specific peripherals
+**/icache.c                     # Instruction Cache configuration (STM32U5)
+**/icache.h                     # Instruction Cache definitions (STM32U5)
+**/memorymap.c                  # Memory mapping configuration (STM32U5)
+**/memorymap.h                  # Memory mapping definitions (STM32U5)
+
+# STM32 HAL Configuration Files (Generated Templates)
+**/stm32*xx_hal_conf.h          # HAL configuration (can be customized but mostly generated)
+**/stm32*xx_it.h                # Interrupt definitions
+
+# Special FreeRTOS Files (Mixed Generated/User - Handle Carefully)
+# Keep Core/Inc/FreeRTOSConfig.h as it often contains user customizations
+# Most other FreeRTOS files in Middlewares/ already ignored above
+
+# Linker Scripts - KEEP THESE (Essential for memory layout)
+# These are often customized and critical for the application
+# !**/STM32*_FLASH.ld           # Flash memory layout - KEEP
+# !**/STM32*_RAM.ld             # RAM memory layout - KEEP  
+# !**/*.ld                      # All linker scripts - KEEP
+
+# Essential Files That Must Be Kept (Whitelist Override)
+# These override the ignore patterns above
+!**/main.c                      # Main application entry point (USER CODE)
+!**/main.h                      # Main header (usually contains user definitions)
+!**/*.ioc                       # STM32CubeMX project files (ESSENTIAL)
+!**/CMakeLists.txt              # Build configuration (USER CODE)
+!**/CMakePresets.json           # CMake presets (USER CODE)
+!**/*.cmake                     # CMake modules (USER CODE)
+!**/STM32*_FLASH.ld             # Flash linker script (ESSENTIAL)
+!**/STM32*_RAM.ld               # RAM linker script (ESSENTIAL)
+!**/stm32*xx_flash_*.ld         # Flash linker scripts (ESSENTIAL)
+
+# Keep app/ directory structure (All user code)
+!app/                           # Application code directory (USER CODE)
+!app/**                         # All application code (USER CODE)
 
 # Build outputs and artifacts
 build/
