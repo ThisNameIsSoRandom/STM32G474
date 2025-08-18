@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"@if(PROJECT_TYPE STREQUAL "EXECUTABLE")@,
+        "marus25.cortex-debug",
+        "dan-c-underwood.arm"@endif()@
+    ]
+}

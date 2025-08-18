@@ -1,24 +1,24 @@
 {
     // STM32CubeCLT toolchain paths
-    "cmake.cmakePath": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
+    "cmake.cmakePath": "@CMAKE_PATH@",
     "cmake.generator": "Ninja",
     
     // CMake configuration settings
     "cmake.configureSettings": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_MAKE_PROGRAM": "C:/ST/STM32CubeCLT_1.18.0/Ninja/bin/ninja.exe"
+        "CMAKE_MAKE_PROGRAM": "@NINJA_PATH@"
     },
     
     // Build settings
     "cmake.buildArgs": ["-j", "10"],
-    "cmake.buildDirectory": "${workspaceFolder}/cmake-build-debug",
+    "cmake.buildDirectory": "${workspaceFolder}/@BUILD_DIR@",
     
     // Configure CMake to always use the presets
     "cmake.useCMakePresets": "never",
     
     // IntelliSense configuration for ARM GCC
-    "C_Cpp.default.compilerPath": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
-    "C_Cpp.default.intelliSenseMode": "gcc-arm",
+    "C_Cpp.default.compilerPath": "@GCC_PATH@",
+    "C_Cpp.default.intelliSenseMode": "@INTELLISENSE_MODE@",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     
     // Terminal settings for tasks
@@ -46,16 +46,16 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "**/Drivers": true,
-        "**/Middlewares": true
+        "**/Drivers": @EXCLUDE_DRIVERS_MIDDLEWARE@,
+        "**/Middlewares": @EXCLUDE_DRIVERS_MIDDLEWARE@
     },
     
     // Search exclude patterns
     "search.exclude": {
         "**/build": true,
         "**/cmake-build-*": true,
-        "**/Drivers": true,
-        "**/Middlewares": true
+        "**/Drivers": @EXCLUDE_DRIVERS_MIDDLEWARE@,
+        "**/Middlewares": @EXCLUDE_DRIVERS_MIDDLEWARE@
     },
     
     // Project-specific settings

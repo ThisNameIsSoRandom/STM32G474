@@ -1,0 +1,152 @@
+# IDE Configuration Generation Core Logic
+# This file contains the main logic for discovering projects and generating
+# IDE configuration files (VSCode, STM32CubeIDE) for the entire workspace.
+
+cmake_minimum_required(VERSION 3.22)
+
+# Include existing IDE generation modules
+include(cmake/vscode.cmake)
+include(cmake/stm32cubeide.cmake)
+
+# Function to discover all projects and generate their IDE configurations
+function(discover_and_generate_ide_configs)
+    message(STATUS "Discovering projects in workspace...")
+    
+    set(discovered_projects "")
+    
+    # Discover app project
+    if(EXISTS "${CMAKE_SOURCE_DIR}/app/ide-config.cmake")
+        message(STATUS "Found app project")
+        list(APPEND discovered_projects "app")
+    endif()
+    
+    # Discover board projects
+    file(GLOB board_dirs "${CMAKE_SOURCE_DIR}/boards/*")
+    foreach(board_dir ${board_dirs})
+        if(IS_DIRECTORY "${board_dir}")
+            get_filename_component(board_name "${board_dir}" NAME)
+            if(EXISTS "${board_dir}/ide-config.cmake")
+                message(STATUS "Found board project: ${board_name}")
+                list(APPEND discovered_projects "boards/${board_name}")
+            endif()
+        endif()
+    endforeach()
+    
+    if(NOT discovered_projects)
+        message(WARNING "No projects with ide-config.cmake found!")
+        return()
+    endif()
+    
+    list(LENGTH discovered_projects project_count)
+    message(STATUS "Discovered ${project_count} projects")
+    
+    # Generate IDE configurations for each discovered project
+    foreach(project_path ${discovered_projects})
+        message(STATUS "Generating IDE config for: ${project_path}")
+        generate_project_ide_config("${project_path}")
+    endforeach()
+    
+    # Generate workspace-level configurations
+    generate_workspace_ide_configs()
+    
+endfunction()
+
+# Function to generate IDE configuration for a specific project
+function(generate_project_ide_config project_path)
+    set(project_dir "${CMAKE_SOURCE_DIR}/${project_path}")
+    set(config_file "${project_dir}/ide-config.cmake")
+    
+    if(NOT EXISTS "${config_file}")
+        message(WARNING "No ide-config.cmake found for ${project_path}")
+        return()
+    endif()
+    
+    # Clear any existing project configuration variables
+    unset(PROJECT_IDE_CONFIG)
+    unset(PROJECT_NAME)
+    unset(PROJECT_TYPE)
+    unset(MCU_NAME)
+    unset(MCU_FAMILY)
+    unset(MCU_CORE)
+    unset(FPU_TYPE)
+    unset(FLOAT_ABI)
+    unset(LINKER_SCRIPT)
+    unset(INCLUDE_DIRS)
+    unset(SOURCE_DIRS)
+    unset(HAL_DEFINES)
+    
+    # Load project configuration
+    include("${config_file}")
+    
+    # Validate required configuration
+    if(NOT DEFINED PROJECT_NAME)
+        message(FATAL_ERROR "PROJECT_NAME not defined in ${config_file}")
+    endif()
+    
+    if(NOT DEFINED PROJECT_TYPE)
+        message(FATAL_ERROR "PROJECT_TYPE not defined in ${config_file}")
+    endif()
+    
+    # Set current source directory context for template generation
+    set(CMAKE_CURRENT_SOURCE_DIR "${project_dir}")
+    
+    # Generate STM32CubeIDE configuration
+    if(PROJECT_TYPE STREQUAL "EXECUTABLE")
+        generate_stm32cubeide_project(
+            PROJECT_NAME "${PROJECT_NAME}"
+            PROJECT_TYPE "${PROJECT_TYPE}"
+            MCU_NAME "${MCU_NAME}"
+            MCU_FAMILY "${MCU_FAMILY}" 
+            MCU_CORE "${MCU_CORE}"
+            FPU_TYPE "${FPU_TYPE}"
+            FLOAT_ABI "${FLOAT_ABI}"
+            LINKER_SCRIPT "${LINKER_SCRIPT}"
+            INCLUDE_DIRS ${INCLUDE_DIRS}
+            SOURCE_DIRS ${SOURCE_DIRS}
+            HAL_DEFINES ${HAL_DEFINES}
+        )
+    else()
+        generate_stm32cubeide_project(
+            PROJECT_NAME "${PROJECT_NAME}"
+            PROJECT_TYPE "${PROJECT_TYPE}"
+            INCLUDE_DIRS ${INCLUDE_DIRS}
+            SOURCE_DIRS ${SOURCE_DIRS}
+        )
+    endif()
+    
+    # Generate VSCode configuration  
+    if(PROJECT_TYPE STREQUAL "EXECUTABLE")
+        generate_vscode_project(
+            PROJECT_NAME "${PROJECT_NAME}"
+            PROJECT_TYPE "${PROJECT_TYPE}"
+            MCU_NAME "${MCU_NAME}"
+            MCU_FAMILY "${MCU_FAMILY}"
+            MCU_CORE "${MCU_CORE}"
+            LINKER_SCRIPT "${LINKER_SCRIPT}"
+            INCLUDE_DIRS ${INCLUDE_DIRS}
+            SOURCE_DIRS ${SOURCE_DIRS}
+            HAL_DEFINES ${HAL_DEFINES}
+        )
+    else()
+        generate_vscode_project(
+            PROJECT_NAME "${PROJECT_NAME}"
+            PROJECT_TYPE "${PROJECT_TYPE}"
+            INCLUDE_DIRS ${INCLUDE_DIRS}
+            SOURCE_DIRS ${SOURCE_DIRS}
+        )
+    endif()
+    
+    message(STATUS "  Generated IDE configs for ${PROJECT_NAME} (${PROJECT_TYPE})")
+    
+endfunction()
+
+# Function to generate workspace-level IDE configurations
+function(generate_workspace_ide_configs)
+    message(STATUS "Generating workspace-level configurations...")
+    
+    # The VSCode workspace file is automatically generated by the vscode.cmake module
+    # when generate_vscode_project() is called, so no additional action needed here
+    
+    message(STATUS "  Generated VSCode multi-root workspace")
+    
+endfunction()

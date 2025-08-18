@@ -1,0 +1,199 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Configure CMake",
+            "type": "shell",
+            "command": "@CMAKE_PATH@",
+            "args": [
+                "-B", "${workspaceFolder}/@BUILD_DIR@",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DCMAKE_MAKE_PROGRAM=@NINJA_PATH@",
+                "-DBOARD=@PROJECT_NAME@"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build @PROJECT_NAME@",
+            "type": "shell",
+            "command": "@CMAKE_PATH@",
+            "args": [
+                "--build", "${workspaceFolder}/@BUILD_DIR@",
+                "--target", "@BUILD_TARGET@",
+                "-j", "10"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure CMake"
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "@CMAKE_PATH@",
+            "args": [
+                "--build", "${workspaceFolder}/@BUILD_DIR@",
+                "--target", "clean"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Rebuild @PROJECT_NAME@",
+            "dependsOn": ["Clean Build", "Build @PROJECT_NAME@"],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Flash @PROJECT_NAME@",
+            "type": "shell",
+            "command": "@PROGRAMMER_PATH@",
+            "args": [
+                "-c", "port=SWD",
+                "-w", "${workspaceFolder}/@BUILD_DIR@/@PROJECT_NAME@.elf",
+                "-v",
+                "-rst"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "dependsOn": "Build @PROJECT_NAME@"
+        },
+        {
+            "label": "Start OpenOCD GDB Server",
+            "type": "shell",
+            "command": "@OPENOCD_PATH@",
+            "args": [
+                "-f", "interface/stlink.cfg",
+                "-f", "target/@OPENOCD_TARGET@.cfg"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^(Error:|Warning:)\\s+(.*)$",
+                    "severity": 1,
+                    "message": 2
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^Open On-Chip Debugger",
+                    "endsPattern": "^Info : Listening on port 3333 for gdb connections"
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "group": "none"
+        },
+        {
+            "label": "Stop OpenOCD Server",
+            "type": "shell",
+            "windows": {
+                "command": "taskkill",
+                "args": ["/F", "/IM", "openocd.exe"]
+            },
+            "linux": {
+                "command": "killall",
+                "args": ["openocd"]
+            },
+            "osx": {
+                "command": "killall",
+                "args": ["openocd"]
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "group": "none"
+        },
+        {
+            "label": "Build and Flash",
+            "dependsOn": ["Build @PROJECT_NAME@", "Flash @PROJECT_NAME@"],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup Debug Session",
+            "dependsOn": [
+                "Configure CMake",
+                "Build @PROJECT_NAME@",
+                "Flash @PROJECT_NAME@",
+                "Start OpenOCD GDB Server"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

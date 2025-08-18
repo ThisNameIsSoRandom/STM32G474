@@ -1,0 +1,23 @@
+# Makefile wrapper for STM32CubeIDE CMake integration
+# Routes make commands to proper CMake calls
+
+.PHONY: all clean @PROJECT_NAME@
+
+# Default target - build the project
+all: @PROJECT_NAME@
+
+# Build the specific target
+@PROJECT_NAME@:
+	cmake --build cmake-build-debug --target @PROJECT_NAME@
+
+# Clean target
+clean:
+	cmake --build cmake-build-debug --target clean
+
+# Help target
+help:
+	@echo "Available targets:"
+	@echo "  all           - Build @PROJECT_NAME@ (default)"
+	@echo "  @PROJECT_NAME@ - Build @PROJECT_NAME@"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  help          - Show this help"

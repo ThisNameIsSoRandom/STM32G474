@@ -1,0 +1,75 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug @PROJECT_NAME@",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/cmake-build-debug/@PROJECT_NAME@.elf",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "@GDB_PATH@",
+            "miDebuggerServerAddress": "localhost:3333",
+            "debugServerPath": "@OPENOCD_PATH@",
+            "debugServerArgs": "-f interface/stlink.cfg -f target/@OPENOCD_TARGET@.cfg",
+            "serverLaunchedMessage": "Info : Listening on port 3333 for gdb connections",
+            "filterStderr": true,
+            "filterStdout": false,
+            "serverStarted": "Info : Listening on port 3333 for gdb connections",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "engineLogging": false,
+                "programOutput": true,
+                "exceptions": true
+            },
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Load the executable",
+                    "text": "load",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Set breakpoint at main",
+                    "text": "break main",
+                    "ignoreFailures": false
+                }
+            ],
+            "postDebugTask": "Stop OpenOCD Server",
+            "preLaunchTask": "Setup Debug Session"
+        },
+        {
+            "name": "Attach to @PROJECT_NAME@",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/cmake-build-debug/@PROJECT_NAME@.elf",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "@GDB_PATH@",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "engineLogging": false,
+                "programOutput": true,
+                "exceptions": true
+            }
+        }
+    ]
+}

@@ -1,11 +1,86 @@
 cmake_minimum_required(VERSION 3.22)
 
-#
-# This file is generated only once,
-# and is not re-generated if converter is called multiple times.
-#
-# User is free to modify the file as much as necessary
-#
+#[[
+================================================================================
+                        STM32U575ZI-Q Nucleo Board Project
+================================================================================
+
+OVERVIEW:
+This is the board-specific CMakeLists.txt for the STM32U575ZI-Q Nucleo board.
+It configures and builds a complete embedded application that combines the
+shared app library with STM32U575 HAL drivers and FreeRTOS real-time OS.
+
+TARGET SPECIFICATIONS:
+- MCU: STM32U575ZITxQ (ARM Cortex-M33 with TrustZone)
+- Core: ARM Cortex-M33 @ 160 MHz
+- Flash: 2048 KB
+- RAM: 786 KB
+- FPU: Single-precision floating-point unit
+- Security: ARM TrustZone support (non-secure world)
+- Board: NUCLEO-U575ZI-Q development board
+
+ARCHITECTURE:
+The build integrates several components:
+├── Core/                   # STM32CubeMX generated HAL code
+│   ├── Inc/               # MCU-specific headers and configuration
+│   └── Src/               # Main application entry point and HAL init
+├── Drivers/               # STM32U5 HAL/LL drivers and CMSIS
+├── Middlewares/           # FreeRTOS kernel and CMSIS-RTOS wrapper
+├── cmake/                 # Board-specific build configuration
+│   ├── gcc-arm-none-eabi.cmake    # ARM GCC toolchain setup
+│   ├── freertos.cmake             # FreeRTOS configuration
+│   └── stm32cubemx/              # STM32CubeMX generated build rules
+└── ../../app/            # Shared application library (linked)
+
+BUILD FEATURES:
+- ARM GCC cross-compilation toolchain
+- C11 and C++20 standard support
+- FreeRTOS v10.x real-time operating system
+- STM32U5 HAL/LL driver libraries
+- CMSIS-RTOS v2 API wrapper
+- Debug symbol generation
+- Compile commands export for IDE IntelliSense
+- Linker script for STM32U575xx memory layout
+
+MEMORY CONFIGURATION:
+- Flash: 0x08000000 - 0x081FFFFF (2048 KB)
+- RAM:   0x20000000 - 0x200C3FFF (786 KB)
+- Stack: Configured for FreeRTOS task stacks
+- Heap:  FreeRTOS heap_4 memory management
+
+APPLICATION INTEGRATION:
+Links with the shared 'app' library to provide:
+- BQ40Z80 battery management system driver
+- Real-time task scheduling and management
+- SEGGER RTT logging and debugging
+- Unit test framework integration (optional)
+
+FREERTOS CONFIGURATION:
+- Kernel: FreeRTOS with CMSIS-RTOS v2 wrapper
+- Port: ARM Cortex-M33 non-secure (GCC)
+- Heap: heap_4 algorithm with thread-safe allocation
+- Tick: SysTick timer at 1000 Hz
+- Priority: 16 priority levels (0 = lowest, 15 = highest)
+
+DEBUGGING:
+- Support for STM32CubeProgrammer and ST-Link
+- SEGGER J-Link compatible
+- SWD interface debugging
+- Real-time variable watching via RTT
+- Eclipse CDT and VSCode debug configurations
+
+BUILD COMMANDS:
+- Configure: cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+- Build: cmake --build cmake-build-debug --target nucleo-U575ZI-Q
+- Flash: (Use STM32CubeProgrammer or debugger)
+
+PREREQUISITES:
+- STM32CubeCLT 1.18.0+ (CMake, ARM GCC, OpenOCD)
+- Git (for FreeRTOS dependency fetching)
+- STM32CubeMX (for hardware configuration updates)
+
+================================================================================
+]]
 
 # Setup compiler settings
 set(CMAKE_C_STANDARD 11)
@@ -14,7 +89,6 @@ set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -40,11 +114,43 @@ enable_language(C CXX ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
-# Enable unit tests for this platform (must be before app subdirectory)
-set(ENABLE_UNIT_TESTS ON CACHE BOOL "Enable unit tests" FORCE)
+# Disable unit tests for this platform (mocking removed)
+set(ENABLE_UNIT_TESTS OFF CACHE BOOL "Enable unit tests" FORCE)
 
-# Include parent project to access app target
-add_subdirectory(../../ ${CMAKE_BINARY_DIR}/STM32G474)
+# Include app from parent directory (builds automatically)
+add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
+
+# Generate IDE configuration files (only if not called from root-level IDE generator)
+if(NOT IDE_CONFIG_GENERATION_ONLY)
+    # Generate STM32CubeIDE project files
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/stm32cubeide.cmake)
+    generate_stm32cubeide_project(
+        PROJECT_NAME "${CMAKE_PROJECT_NAME}"
+        MCU_NAME "STM32U575ZITxQ"
+        MCU_FAMILY "STM32U5"
+        MCU_CORE "thumb"
+        FPU_TYPE "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-sp-d16"
+        FLOAT_ABI "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard"
+        LINKER_SCRIPT "STM32U575xx_FLASH.ld"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure"
+        SOURCE_DIRS "Core/Src" "Core/Inc"
+        HAL_DEFINES "USE_HAL_DRIVER" "STM32U575xx"
+    )
+
+    # Generate VSCode project files
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/vscode.cmake)
+    generate_vscode_project(
+        PROJECT_NAME "${CMAKE_PROJECT_NAME}"
+        PROJECT_TYPE "EXECUTABLE"
+        MCU_NAME "STM32U575ZITxQ"
+        MCU_FAMILY "STM32U5"
+        MCU_CORE "thumb"
+        LINKER_SCRIPT "STM32U575xx_FLASH.ld"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure"
+        SOURCE_DIRS "Core/Src" "Core/Inc"
+        HAL_DEFINES "USE_HAL_DRIVER" "STM32U575xx"
+    )
+endif()
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -72,7 +178,6 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
     
     # Enable unit tests for this platform
-    ENABLE_UNIT_TESTS=1
 )
 
 # Add linked libraries

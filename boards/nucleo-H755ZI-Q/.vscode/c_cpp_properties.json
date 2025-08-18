@@ -1,0 +1,46 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "STM32H755ZI-Q",
+            "includePath": [
+                "${workspaceFolder}/CM7/Core/Inc",
+                "${workspaceFolder}/CM4/Core/Inc",
+                "${workspaceFolder}/Common/Inc",
+                "${workspaceFolder}/Drivers/STM32H7xx_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/Drivers/BSP/STM32H7xx_Nucleo",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1",
+                "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "${workspaceFolder}/../../app/Inc",
+                "${workspaceFolder}/../../app/Src/RTT/Inc",
+                "${workspaceFolder}/../../app/Src/Tasks/Inc",
+                "${workspaceFolder}/../../app/Src/BQ40Z80/Inc"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32H755xx",
+                "USE_STM32H7XX_NUCLEO",
+                "CORE_CM7",
+                "ARM_MATH_CM7",
+                "__VFP_FP__",
+                "__FPU_PRESENT=1"
+            ],
+            "compilerPath": "C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerArgs": [
+                "-mcpu=cortex-m7",
+                "-mthumb",
+                "-mfpu=fpv5-d16",
+                "-mfloat-abi=hard"
+            ]
+        }
+    ]
+}

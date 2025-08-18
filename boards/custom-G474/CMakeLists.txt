@@ -46,8 +46,40 @@ enable_language(C CXX ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
-# Include app from parent directory
+# Include app from parent directory (builds automatically)
 add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
+
+# Generate IDE configuration files (only if not called from root-level IDE generator)
+if(NOT IDE_CONFIG_GENERATION_ONLY)
+    # Generate STM32CubeIDE project files
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/stm32cubeide.cmake)
+    generate_stm32cubeide_project(
+        PROJECT_NAME "${CMAKE_PROJECT_NAME}"
+        MCU_NAME "STM32G474RETx"
+        MCU_FAMILY "STM32G4"
+        MCU_CORE "thumb"
+        FPU_TYPE "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv4-sp-d16"
+        FLOAT_ABI "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard"
+        LINKER_SCRIPT "STM32G474XX_FLASH.ld"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32G4xx_HAL_Driver/Inc" "Drivers/STM32G4xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32G4xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+        SOURCE_DIRS "Core/Src" "Core/Inc"
+        HAL_DEFINES "USE_HAL_DRIVER" "STM32G474xx"
+    )
+
+    # Generate VSCode project files
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/vscode.cmake)
+    generate_vscode_project(
+        PROJECT_NAME "${CMAKE_PROJECT_NAME}"
+        PROJECT_TYPE "EXECUTABLE"
+        MCU_NAME "STM32G474RETx"
+        MCU_FAMILY "STM32G4"
+        MCU_CORE "thumb"
+        LINKER_SCRIPT "STM32G474XX_FLASH.ld"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32G4xx_HAL_Driver/Inc" "Drivers/STM32G4xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32G4xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+        SOURCE_DIRS "Core/Src" "Core/Inc"
+        HAL_DEFINES "USE_HAL_DRIVER" "STM32G474xx"
+    )
+endif()
 
 # Add STM32CubeMX generated sources first
 add_subdirectory(cmake/stm32cubemx)

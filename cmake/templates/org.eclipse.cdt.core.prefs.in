@@ -1,0 +1,9 @@
+eclipse.preferences.version=1
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/CPATH/delimiter=;
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/CPATH/operation=remove
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/CPLUS_INCLUDE_PATH/delimiter=;
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/CPLUS_INCLUDE_PATH/operation=remove
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/C_INCLUDE_PATH/delimiter=;
+environment/buildEnvironmentInclude/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/C_INCLUDE_PATH/operation=remove
+environment/buildEnvironmentLibrary/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/LIBRARY_PATH/delimiter=;
+environment/buildEnvironmentLibrary/@MCU_FAMILY@XX/@LINKER_SCRIPT@/@MCU_NAME@/LIBRARY_PATH/operation=remove
