@@ -65,6 +65,239 @@ STM32G474/
 - **HAL Abstraction**: Platform-agnostic HAL function declarations
 - **Weak Implementations**: Default HAL behaviors with platform overrides
 
+## Development Environment Setup
+
+This section covers the complete setup process for developing with this STM32 multi-board project. Follow these steps to establish a fully functional embedded development environment.
+
+### Required Tools
+
+#### Make
+Make is a build automation tool that uses pattern-based rules to compile and link programs efficiently. It simplifies complex build processes by managing dependencies automatically and only rebuilding changed components. For this project, Make provides a unified frontend interface for building any STM32 board target with simple commands like `make debug nucleo-u575zi-q`.
+
+#### Git Bash (Windows Users)
+Git Bash provides a Unix-like command-line interface on Windows with integrated Git support and POSIX-compliant shell scripting. It includes essential Unix tools (grep, find, sed) that many build scripts and Makefiles expect to be available. This project's Makefile is designed to work seamlessly in Git Bash, WSL, or native Linux environments.
+
+#### STM32CubeCLT (STM32Cube Command Line Tools)
+STM32CubeCLT is STMicroelectronics' complete embedded toolchain including ARM GCC compiler, CMake, Ninja build generator, and OpenOCD debugger. It provides a unified, tested toolchain specifically optimized for STM32 development with consistent versions across Windows, Linux, and macOS. The project is configured to use STM32CubeCLT 1.18.0+ with hardcoded paths for reliable builds.
+
+#### IDE Options: VSCode vs CLion
+**VSCode** offers lightweight, extensible embedded development with excellent C++ IntelliSense and debugging through the cortex-debug extension. It excels at multicore debugging (essential for STM32H755 dual-core) with customizable JSON-based configuration and seamless integration with our Makefile frontend. **CLion** provides a full-featured C++ IDE with advanced refactoring, integrated CMake support, and sophisticated debugging capabilities, though it has limitations with STM32 multicore debugging workflows.
+
+#### OpenOCD (On-Chip Debugger)  
+OpenOCD provides the critical bridge between your development environment and STM32 hardware through ST-Link, J-Link, or custom debug probes. It enables real-time debugging, flash programming, and hardware trace capabilities across all STM32 families. The tool is pre-integrated with STM32CubeCLT and configured for each board's specific debug interface and memory layout.
+
+#### STM32CubeMX (Hardware Configuration)
+STM32CubeMX is the graphical tool for configuring STM32 peripherals (GPIO, timers, communication interfaces) and generating initialization code. It produces `.ioc` project files that define hardware configurations and can regenerate board-specific code when hardware requirements change. This project tracks `.ioc` files in version control while ignoring the generated peripheral code to maintain clean repositories.
+
+### Installation Guide
+
+#### Windows Setup (Recommended Path)
+```bash
+# 1. Install STM32CubeCLT (includes everything except STM32CubeMX)
+# Download from: https://www.st.com/en/development-tools/stm32cubeclt.html
+# Install to default location: C:/ST/STM32CubeCLT_1.18.0/
+
+# 2. Install STM32CubeMX separately (for hardware configuration)
+# Download from: https://www.st.com/en/development-tools/stm32cubemx.html
+
+# 3. Install Git for Windows (includes Git Bash)
+# Download from: https://git-scm.com/download/win
+# Ensure "Git Bash" option is selected during installation
+
+# 4. Verify installation
+git --version                    # Git available
+make --version                   # Make available (from Git tools)
+/c/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe --version    # CMake from STM32CubeCLT
+```
+
+#### Linux/WSL Setup
+```bash
+# 1. Download and install STM32CubeCLT for Linux
+wget https://www.st.com/content/st_com/en/products/development-tools/software-development-tools/stm32-software-development-tools/stm32-configurators-and-code-generators/stm32cubeclt.html
+
+# 2. Update Makefile paths to point to Linux installation
+# Edit: CMAKE := /opt/st/stm32cubeclt/CMake/bin/cmake
+
+# 3. Install native build tools
+sudo apt update
+sudo apt install build-essential cmake ninja-build
+
+# 4. STM32CubeMX (optional, for hardware changes)
+# Download and install STM32CubeMX .deb package
+```
+
+### Project Configuration Generation
+
+This project uses a hybrid approach: track `.ioc` configuration files but ignore generated code for repository cleanliness.
+
+#### Generating Board Configurations
+```bash
+# 1. Open board-specific .ioc file in STM32CubeMX
+# Example: boards/nucleo-U575ZI-Q/nucleo-U575ZI-Q.ioc
+
+# 2. Make hardware changes as needed:
+#    - Configure GPIO pins, peripherals, clocks
+#    - Set up FreeRTOS tasks and stack sizes
+#    - Configure debug interfaces (SWD/JTAG)
+
+# 3. Generate code (overwrites Core/ directories)
+# STM32CubeMX → Project Manager → Generate Code
+
+# 4. Build immediately to verify configuration
+make debug nucleo-u575zi-q
+
+# Note: Generated files are gitignored, only .ioc changes are tracked
+```
+
+#### CMake Configuration Workflow
+```bash
+# The build system automatically configures CMake for each project:
+
+# Manual configuration (if needed):
+cd boards/nucleo-U575ZI-Q
+/c/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe -B cmake-build-debug \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_C_COMPILER=/c/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe \
+    -DCMAKE_CXX_COMPILER=/c/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe \
+    -G Ninja
+
+# Build target
+cmake --build cmake-build-debug --target nucleo-U575ZI-Q -j 10
+```
+
+### Makefile Frontend Usage
+
+The root-level Makefile provides a unified build interface for all projects, eliminating the need for complex IDE extensions.
+
+#### Basic Command Structure
+```bash
+# Pattern: make [debug|release] [project-name]
+make debug nucleo-u575zi-q      # Build STM32U575 board (debug)
+make release nucleo-l476rg      # Build STM32L476 board (release)
+make debug app                  # Build shared app library
+make clean nucleo-u575zi-q      # Clean specific project
+make clean-all                  # Clean all projects
+make list                       # Show available projects
+make help                       # Show usage information
+```
+
+#### Available Projects
+- **app**: Shared application library (platform-agnostic)
+- **nucleo-u575zi-q**: STM32U575ZI-Q Nucleo board
+- **nucleo-l476rg**: STM32L476RG Nucleo board  
+- **custom-g474**: Custom STM32G474 board
+- **nucleo-h755zi-q**: STM32H755ZI-Q dual-core board
+
+#### Build Outputs
+```bash
+# Debug builds output to:
+boards/[board-name]/cmake-build-debug/[board-name].elf
+
+# Release builds output to:
+boards/[board-name]/cmake-build-release/[board-name].elf
+
+# App library builds to:
+app/build/libapp.a
+```
+
+### IDE/Editor Configuration
+
+#### VSCode Setup (Recommended)
+```bash
+# 1. Install required extensions:
+# - C/C++ (ms-vscode.cpptools)
+# - C/C++ Extension Pack
+# - Cortex-Debug (for STM32 debugging)
+
+# 2. Open workspace file:
+code STM32G474.code-workspace
+
+# 3. Build using integrated tasks:
+# Ctrl+Shift+P → "Tasks: Run Task" → "Build: Debug"
+# Select project from dropdown menu
+
+# 4. Features available:
+# - IntelliSense via compile_commands.json
+# - Problem matcher for build errors
+# - Integrated terminal with make commands
+# - Debugging support (especially for STM32H755 multicore)
+```
+
+#### CLion Configuration
+```bash
+# 1. Open project root directory in CLion
+# File → Open → Select STM32G474 directory
+
+# 2. Configure toolchain:
+# File → Settings → Build,Execution,Deployment → Toolchains
+# Add new toolchain: "STM32CubeCLT"
+# - C Compiler: C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe
+# - C++ Compiler: C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe
+# - Debugger: C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gdb.exe
+
+# 3. CMake configuration:
+# File → Settings → Build,Execution,Deployment → CMake
+# Add profile for each board with appropriate -DBOARD= option
+
+# 4. Use external Makefile frontend:
+# External Tools → Add tool for "Build Debug"
+# Program: make
+# Arguments: debug $Prompt$
+# Working directory: $ProjectFileDir$
+```
+
+#### Generic C++ IDE Setup
+```bash
+# Any IDE supporting C++ can work with this project:
+
+# 1. Configure compiler paths to STM32CubeCLT:
+# - C Compiler: [STM32CubeCLT]/GNU-tools-for-STM32/bin/arm-none-eabi-gcc
+# - C++ Compiler: [STM32CubeCLT]/GNU-tools-for-STM32/bin/arm-none-eabi-g++
+# - Debugger: [STM32CubeCLT]/GNU-tools-for-STM32/bin/arm-none-eabi-gdb
+
+# 2. Configure IntelliSense using compile_commands.json:
+# Point IDE to: boards/[board-name]/cmake-build-debug/compile_commands.json
+
+# 3. Set up build commands:
+# Build: make debug [project-name]
+# Clean: make clean [project-name]
+
+# 4. Configure include paths (if needed):
+# - boards/[board-name]/Core/Inc
+# - app/Inc
+# - STM32CubeCLT HAL driver includes (auto-detected via compile_commands.json)
+```
+
+### Verification and Testing
+
+#### Build System Verification
+```bash
+# Test each component:
+make help                       # Should show usage information
+make list                       # Should show available projects
+make debug app                  # Should build shared library
+make debug nucleo-u575zi-q      # Should build STM32U575 firmware
+make clean-all                  # Should clean all build directories
+
+# Verify outputs exist:
+ls app/build/                   # Should contain libapp.a
+ls boards/nucleo-U575ZI-Q/cmake-build-debug/   # Should contain .elf file
+```
+
+#### IDE Integration Testing
+```bash
+# VSCode:
+# - Open STM32G474.code-workspace
+# - Ctrl+Shift+P → "Tasks: Run Task" → should show build tasks
+# - Build task should invoke make commands successfully
+# - IntelliSense should provide code completion
+
+# CLion:
+# - Open project, verify toolchain detection
+# - Build configurations should appear for each board
+# - External make tools should execute without errors
+```
+
 ## Build Instructions
 
 ### Prerequisites
