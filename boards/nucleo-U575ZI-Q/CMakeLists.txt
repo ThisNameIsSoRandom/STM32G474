@@ -117,6 +117,9 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Disable unit tests for this platform (mocking removed)
 set(ENABLE_UNIT_TESTS OFF CACHE BOOL "Enable unit tests" FORCE)
 
+# Pass platform-specific definitions to app library
+add_compile_definitions(STM32U575xx USE_HAL_DRIVER)
+
 # Include app from parent directory (builds automatically)
 add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
 
@@ -132,7 +135,7 @@ if(NOT IDE_CONFIG_GENERATION_ONLY)
         FPU_TYPE "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.fpu.value.fpv5-sp-d16"
         FLOAT_ABI "com.st.stm32cube.ide.mcu.gnu.managedbuild.option.floatabi.value.hard"
         LINKER_SCRIPT "STM32U575xx_FLASH.ld"
-        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include"
         SOURCE_DIRS "Core/Src" "Core/Inc"
         HAL_DEFINES "USE_HAL_DRIVER" "STM32U575xx"
     )
@@ -146,7 +149,7 @@ if(NOT IDE_CONFIG_GENERATION_ONLY)
         MCU_FAMILY "STM32U5"
         MCU_CORE "thumb"
         LINKER_SCRIPT "STM32U575xx_FLASH.ld"
-        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include" "Middlewares/Third_Party/FreeRTOS/Source/include" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM33_NTZ/non_secure"
+        INCLUDE_DIRS "Core/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc" "Drivers/STM32U5xx_HAL_Driver/Inc/Legacy" "Drivers/CMSIS/Device/ST/STM32U5xx/Include" "Drivers/CMSIS/Include"
         SOURCE_DIRS "Core/Src" "Core/Inc"
         HAL_DEFINES "USE_HAL_DRIVER" "STM32U575xx"
     )

@@ -18,6 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fdcan.h"
+#include "i2c.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -25,6 +28,42 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "freertos_tasks.h"
+#include "vescan_task.h"
+#include "battery_monitor_task.h"
+
+// Logging method selection - uncomment one:
+// #define USE_SEGGER_RTT_LOGGING    // Use SEGGER RTT for logging
+#define USE_UART_CONSOLE_LOGGING  // Use UART4 console for logging
+
+// Include appropriate headers based on logging method
+#ifdef USE_SEGGER_RTT_LOGGING
+#include "SEGGER_RTT.h"
+#elif defined(USE_UART_CONSOLE_LOGGING)
+#include <stdio.h>
+#include <string.h>
+#endif
+
+// Define logging macro based on method selection
+#ifdef USE_SEGGER_RTT_LOGGING
+    #define LOG_PRINT(channel, format, ...) SEGGER_RTT_printf(channel, format, ##__VA_ARGS__)
+#elif defined(USE_UART_CONSOLE_LOGGING)
+    #define LOG_PRINT(channel, format, ...) printf(format, ##__VA_ARGS__)
+#else
+    #define LOG_PRINT(channel, format, ...) // No logging
+#endif
+
+// Unit test integration - declare as weak symbols so they can be overridden
+extern "C" __attribute__((weak)) void startUnitTests(void) {
+    // Weak implementation - does nothing if tests not linked
+    LOG_PRINT(0, "Unit tests not linked - skipping\n");
+}
+
+extern "C" __attribute__((weak)) void runTestsTask(void* pvParameters) {
+    (void)pvParameters;
+    // Weak implementation - just delete task if tests not linked
+    LOG_PRINT(0, "Test task not implemented - deleting task\n");
+    vTaskDelete(NULL);  // Use NULL instead of nullptr for C compatibility
+}
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,7 +73,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+// NOTE: Logging method selection and macro definitions are above, before function definitions
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -88,19 +127,99 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_FDCAN1_Init();
+  MX_I2C2_Init();
+  MX_I2C3_Init();
+  MX_I2C4_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+  // Test UART4 hardware directly first
+  const char* test_msg = "UART4 HAL Test OK\n\r";
+  HAL_UART_Transmit(&huart4, (uint8_t*)test_msg, strlen(test_msg), 1000);
   
-  // Create tasks
-  xTaskCreate(smbusTask, "smbusTask", 256, NULL, 1, NULL);
-  //xTaskCreate(uartTask, "uartTask", 256, NULL, 1, NULL);
-  xTaskCreate(batteryMonitorTask, "batteryTask", 512, NULL, 2, NULL); // TODO: Fix header issue
+  // Test UART4 console via printf/syscalls
+  printf("=== UART4 Console Test ===\n\r");
+  printf("Direct printf test successful!\n\r");
+  
+  // Display startup banner via UART console
+  printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
+  printf("MM                               MM \n\r");
+  printf("MM     `7MM\"\"\"YMM   .M\"\"\"bgd     MM\tExisting solutions v 01.08.25\n\r");
+  printf("MM       MM    `7  ,MI    \"Y     MM \n\r");
+  printf("MM       MM   d    `MMb.         MM \n\r");
+  printf("MM       MMmmMM      `YMMNq.     MM \n\r");
+  printf("MM       MM   Y  , .     `MM     MM \n\r");
+  printf("MM       MM     ,M Mb     dM     MM \n\r");
+  printf("MM     .JMMmmmmMMM P\"Ybmmd\"      MM \n\r");
+  printf("MM                               MM \n\r");
+  printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
 
-  /* USER CODE END 2 */
+  LOG_PRINT(0, "\n=== STM32G474 Custom Board Startup ===\n");
+  LOG_PRINT(0, "Platform: Custom-G474\n");
+  LOG_PRINT(0, "MCU: STM32G474RE Cortex-M4F\n");
+  LOG_PRINT(0, "FreeRTOS: Enabled\n");
+  LOG_PRINT(0, "Architecture: SMBus + VESCAN tasks with queues\n");
+  LOG_PRINT(0, "\n--- Creating Application Tasks ---\n");
 
-  /* Start vanilla FreeRTOS scheduler */
+  /* Initialize VESCAN queues (temporarily disabled for debugging) */
+  // vescanInitQueues();
+  LOG_PRINT(0, "VESCAN queues initialization skipped (debugging)\n");
+
+  /* Configure battery monitor task for STM32G474 platform */
+  static BatteryTaskConfig battery_config = {
+      &hi2c3,                    // Use I2C3 peripheral on this platform
+      BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+      3000,                      // Read battery every 3 seconds
+      "BatteryG474"              // Platform-specific task name
+  };
+
+  /* Create battery monitor task for BQ40Z80 management */
+  TaskHandle_t batteryTaskHandle = NULL;
+  BaseType_t xReturned = xTaskCreate(
+      batteryMonitorTask,           // Task function - battery monitoring with reports
+      "Battery",                    // Task name
+      BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
+      &battery_config,              // Pass configuration as parameters
+      BATTERY_MONITOR_TASK_PRIORITY,// Task priority from configuration
+      &batteryTaskHandle            // Task handle
+  );
+  
+  if(xReturned != pdPASS) {
+    LOG_PRINT(0, "ERROR: Failed to create battery monitor task\n");
+    Error_Handler();
+  }
+  LOG_PRINT(0, "Battery monitor task created successfully (I2C3, 3sec reports)\n");
+
+  /* Create VESCAN task (temporarily disabled for debugging) */
+  LOG_PRINT(0, "VESCAN task creation skipped (debugging - no queues initialized)\n");
+  /*
+  TaskHandle_t vescanTaskHandle = NULL;
+  xReturned = xTaskCreate(
+      vescanTask,                   // Task function
+      "VESCAN",                     // Task name
+      512,                          // Stack size
+      NULL,                         // Parameters
+      tskIDLE_PRIORITY + 2,         // Priority
+      &vescanTaskHandle             // Task handle
+  );
+  
+  if(xReturned != pdPASS) {
+    LOG_PRINT(0, "ERROR: Failed to create VESCAN task\n");
+    Error_Handler();
+  }
+  LOG_PRINT(0, "VESCAN task created successfully (FDCAN1)\n");
+  */
+
+  /* UART task is currently disabled */
+  //TaskHandle_t uartTaskHandle = NULL;
+  //xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
+  
+  LOG_PRINT(0, "\n--- Starting FreeRTOS Scheduler ---\n");
+  LOG_PRINT(0, "Application ready\n\n");
+
+  /* Start FreeRTOS scheduler */
   vTaskStartScheduler();
-
-  /* We should never get here as control is now taken by the scheduler */
+  /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -132,7 +251,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+  RCC_OscInitStruct.PLL.PLLN = 10;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -142,18 +267,27 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
 }
 
 /* USER CODE BEGIN 4 */
+
+// FDCAN handle for G474 platform (G474 uses FDCAN, not classic CAN)
+extern FDCAN_HandleTypeDef hfdcan1;
+
+// HAL_Delay_MS implementation for app library
+extern "C" void HAL_Delay_MS(uint32_t ms)
+{
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}
 
 // FreeRTOS static allocation hook functions
 static StaticTask_t xIdleTaskTCB;
@@ -218,8 +352,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

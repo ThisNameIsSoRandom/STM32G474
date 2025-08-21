@@ -176,10 +176,7 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-/* USER CODE BEGIN IGNORE C WARNINGS*/
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-/* USER CODE END IGNORE C WARNINGS*/
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -312,6 +309,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-/* USER CODE BEGIN IGNORE C WARNINGS*/
-#pragma GCC diagnostic pop
-/* USER CODE END IGNORE C WARNINGS*/

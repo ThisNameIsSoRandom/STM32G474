@@ -82,6 +82,96 @@ __weak void MX_I2C2_Init(void)
     SEGGER_RTT_printf(0, "WARNING: MX_I2C2_Init not implemented by platform\n\r");
 }
 
+// ===============================
+// Weak CAN implementations for VESC CAN library
+// ===============================
+
+/**
+ * @brief Weak implementation of CAN Start
+ */
+__weak HAL_StatusTypeDef HAL_CAN_Start(CAN_HandleTypeDef *hcan)
+{
+    (void)hcan;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_Start not implemented by platform\n\r");
+    return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of CAN Stop
+ */
+__weak HAL_StatusTypeDef HAL_CAN_Stop(CAN_HandleTypeDef *hcan)
+{
+    (void)hcan;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_Stop not implemented by platform\n\r");
+    return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of CAN Add Tx Message
+ */
+__weak HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox)
+{
+    (void)hcan;
+    (void)pHeader;
+    (void)aData;
+    (void)pTxMailbox;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_AddTxMessage not implemented by platform - VESC command not transmitted\n\r");
+    return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of CAN Get Rx Message
+ */
+__weak HAL_StatusTypeDef HAL_CAN_GetRxMessage(CAN_HandleTypeDef *hcan, uint32_t RxFifo, CAN_RxHeaderTypeDef *pHeader, uint8_t aData[])
+{
+    (void)hcan;
+    (void)RxFifo;
+    (void)pHeader;
+    (void)aData;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetRxMessage not implemented by platform - no VESC status received\n\r");
+    return HAL_ERROR;
+}
+
+/**
+ * @brief Weak implementation of CAN Get Rx FIFO Fill Level
+ */
+__weak uint32_t HAL_CAN_GetRxFifoFillLevel(CAN_HandleTypeDef *hcan, uint32_t RxFifo)
+{
+    (void)hcan;
+    (void)RxFifo;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetRxFifoFillLevel not implemented by platform\n\r");
+    return 0;
+}
+
+/**
+ * @brief Weak implementation of CAN Config Filter
+ */
+__weak HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, void *sFilterConfig)
+{
+    (void)hcan;
+    (void)sFilterConfig;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_ConfigFilter not implemented by platform\n\r");
+    return HAL_OK;
+}
+
+/**
+ * @brief Weak implementation of CAN Get State
+ */
+__weak HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef *hcan)
+{
+    (void)hcan;
+    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetState not implemented by platform\n\r");
+    return HAL_CAN_STATE_READY;
+}
+
+/**
+ * @brief Weak implementation of CAN Init
+ */
+__weak void MX_CAN1_Init(void)
+{
+    SEGGER_RTT_printf(0, "WARNING: MX_CAN1_Init not implemented by platform - VESC CAN communication not available\n\r");
+}
+
 /**
  * @brief Weak implementation of UART Transmit IT
  */
@@ -138,6 +228,50 @@ __weak void vTaskDelay(const TickType_t xTicksToDelay)
     (void)xTicksToDelay;
     SEGGER_RTT_printf(0, "WARNING: vTaskDelay not implemented by platform - no delay applied\n\r");
     // No delay in hollow implementation
+}
+
+/**
+ * @brief Weak implementation of xQueueCreate
+ */
+__weak QueueHandle_t xQueueCreate(UBaseType_t uxQueueLength, UBaseType_t uxItemSize)
+{
+    (void)uxQueueLength;
+    (void)uxItemSize;
+    SEGGER_RTT_printf(0, "WARNING: xQueueCreate not implemented by platform - returning null queue\n\r");
+    return nullptr;
+}
+
+/**
+ * @brief Weak implementation of xQueueSend
+ */
+__weak BaseType_t xQueueSend(QueueHandle_t xQueue, const void *pvItemToQueue, TickType_t xTicksToWait)
+{
+    (void)xQueue;
+    (void)pvItemToQueue;
+    (void)xTicksToWait;
+    SEGGER_RTT_printf(0, "WARNING: xQueueSend not implemented by platform - message lost\n\r");
+    return pdFAIL;
+}
+
+/**
+ * @brief Weak implementation of xQueueReceive
+ */
+__weak BaseType_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t xTicksToWait)
+{
+    (void)xQueue;
+    (void)pvBuffer;
+    (void)xTicksToWait;
+    SEGGER_RTT_printf(0, "WARNING: xQueueReceive not implemented by platform - no data received\n\r");
+    return pdFAIL;
+}
+
+/**
+ * @brief Weak implementation of xTaskGetTickCount
+ */
+__weak TickType_t xTaskGetTickCount(void)
+{
+    SEGGER_RTT_printf(0, "WARNING: xTaskGetTickCount not implemented by platform - returning 0\n\r");
+    return 0;
 }
 
 }

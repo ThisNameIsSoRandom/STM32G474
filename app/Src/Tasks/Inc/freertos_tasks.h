@@ -16,6 +16,7 @@ extern "C" {
 void smbusTask(void *pvParameters);
 void uartTask(void *pvParameters);
 void batteryMonitorTask(void *pvParameters);
+void vescanTask(void *pvParameters);
 
 #ifdef __cplusplus
 }

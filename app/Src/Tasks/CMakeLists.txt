@@ -113,6 +113,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     smbus_task.cpp
     uart_task.cpp
     battery_monitor_task.cpp
+    vescan_task.cpp
     hal_implementations.cpp
 )
 
@@ -121,23 +122,29 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../VESCCan/Inc
 )
 
 # Add header files
 target_sources(${PROJECT_NAME} PUBLIC
         Inc/freertos_tasks.h
         Inc/battery_monitor_task.h
+        Inc/vescan_task.h
 )
 
 # No wydmuszka linking needed - platform provides HAL implementations
 
-# Tasks need RTT and BQ40Z80 library
+# Tasks need RTT, BQ40Z80, and VESCCan library
 if(TARGET RTT)
     target_link_libraries(${PROJECT_NAME} PUBLIC RTT)
 endif()
 
 if(TARGET BQ40Z80)
     target_link_libraries(${PROJECT_NAME} PUBLIC BQ40Z80)
+endif()
+
+if(TARGET VESCCan)
+    target_link_libraries(${PROJECT_NAME} PUBLIC VESCCan)
 endif()
 
 # C++ files are now native .cpp - no forced compilation needed

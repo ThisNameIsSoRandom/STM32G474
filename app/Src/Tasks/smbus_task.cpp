@@ -8,6 +8,15 @@
 #include "hal_types.h"
 #include "freertos_types.h"
 #include "SEGGER_RTT.h"
+#include "vescan_task.h"
+
+// Platform-aware logging
+#ifdef STM32G474xx
+#include <stdio.h>
+#define SMBUS_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
+#else
+#define SMBUS_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
+#endif
 
 extern "C" {
 
@@ -54,7 +63,7 @@ static HAL_StatusTypeDef sendManufacturerBlockAccess(uint16_t mac_command)
     buffer[1] = mac_command & 0xFF;             // Low byte of MAC command
     buffer[2] = (mac_command >> 8) & 0xFF;      // High byte of MAC command
     
-    SEGGER_RTT_printf(0, "Sending MAC command 0x%04X via ManufacturerBlockAccess (0x44)\n", mac_command);
+    SMBUS_LOG("Sending MAC command 0x%04X via ManufacturerBlockAccess (0x44)", mac_command);
     
     // Send block write with command and data using I2C blocking mode
     status = HAL_I2C_Master_Transmit(&hi2c2, 
@@ -64,11 +73,11 @@ static HAL_StatusTypeDef sendManufacturerBlockAccess(uint16_t mac_command)
                                     1000); // 1 second timeout
     
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "Failed to send MAC command: %d\n", status);
+        SMBUS_LOG("Failed to send MAC command: %d", status);
         return status;
     }
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "Timeout waiting for MAC command transmission\n");
+        SMBUS_LOG("Timeout waiting for MAC command transmission");
         return status;
     }
     
@@ -96,7 +105,7 @@ static HAL_StatusTypeDef readManufacturerBlockAccess(uint8_t* data, uint8_t max_
                                     1000); // 1 second timeout
     
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "Failed to send read command: %d\n", status);
+        SMBUS_LOG("Failed to send read command: %d", status);
         return status;
     }
     
@@ -111,11 +120,11 @@ static HAL_StatusTypeDef readManufacturerBlockAccess(uint8_t* data, uint8_t max_
                                    2000); // 2 second timeout for block read
     
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "Failed to read MAC response: %d\n", status);
+        SMBUS_LOG("Failed to read MAC response: %d", status);
         return status;
     }
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "Timeout reading MAC response\n");
+        SMBUS_LOG("Timeout reading MAC response");
         return status;
     }
     
@@ -131,7 +140,7 @@ static HAL_StatusTypeDef readManufacturerBlockAccess(uint8_t* data, uint8_t max_
         }
     }
     
-    SEGGER_RTT_printf(0, "Read %d bytes from ManufacturerBlockAccess\n", *actual_len);
+    SMBUS_LOG("Read %d bytes from ManufacturerBlockAccess", *actual_len);
     
     return HAL_OK;
 }
@@ -144,7 +153,7 @@ void smbusTask(void *pvParameters)
 {
     (void)pvParameters;
     
-    SEGGER_RTT_printf(0, "BQ40Z80 SMBus task started!\n");
+    SMBUS_LOG("BQ40Z80 SMBus task started!");
     
     // Wait for system to stabilize
     vTaskDelay(500);
@@ -154,10 +163,10 @@ void smbusTask(void *pvParameters)
     
     for(;;)
     {
-        SEGGER_RTT_printf(0, "\n--- BQ40Z80 Test %d ---\n", ++test_num);
+        SMBUS_LOG("--- BQ40Z80 Test %lu ---", ++test_num);
         
         // Example 1: Read Device Type using ManufacturerBlockAccess
-        SEGGER_RTT_printf(0, "Test 1: Reading Device Type (0x0001)\n");
+        SMBUS_LOG("Test 1: Reading Device Type (0x0001)");
         if (sendManufacturerBlockAccess(CMD_DEVICE_TYPE) == HAL_OK) {
             vTaskDelay(10); // Small delay for command processing
             
@@ -166,7 +175,7 @@ void smbusTask(void *pvParameters)
             if (readManufacturerBlockAccess(response, sizeof(response), &len) == HAL_OK) {
                 if (len >= 2) {
                     uint16_t device_type = response[0] | (response[1] << 8);
-                    SEGGER_RTT_printf(0, "Device Type: 0x%04X\n", device_type);
+                    SMBUS_LOG("Device Type: 0x%04X", device_type);
                 }
             }
         }
@@ -174,16 +183,17 @@ void smbusTask(void *pvParameters)
         vTaskDelay(100);
         
         // Example 2: Enable IT Gauging using ManufacturerBlockAccess
-        SEGGER_RTT_printf(0, "Test 2: Enabling IT Gauging (0x0021)\n");
+        SMBUS_LOG("Test 2: Enabling IT Gauging (0x0021)");
         if (sendManufacturerBlockAccess(CMD_GAUGING) == HAL_OK) {
-            SEGGER_RTT_printf(0, "IT Gauging command sent successfully\n");
+            SMBUS_LOG("IT Gauging command sent successfully");
             // Note: Check ManufacturingStatus()[GAUGE_EN] to verify it's enabled
         }
         
         vTaskDelay(100);
         
         // Example 3: Read Firmware Version
-        SEGGER_RTT_printf(0, "Test 3: Reading Firmware Version (0x0002)\n");
+        SMBUS_LOG("Test 3: Reading Firmware Version (0x0002)");
+        uint16_t fw_version = 0;
         if (sendManufacturerBlockAccess(CMD_FIRMWARE_VERSION) == HAL_OK) {
             vTaskDelay(10);
             
@@ -191,14 +201,42 @@ void smbusTask(void *pvParameters)
             uint8_t len;
             if (readManufacturerBlockAccess(response, sizeof(response), &len) == HAL_OK) {
                 if (len >= 2) {
-                    uint16_t fw_version = response[0] | (response[1] << 8);
-                    SEGGER_RTT_printf(0, "Firmware Version: 0x%04X\n", fw_version);
+                    fw_version = response[0] | (response[1] << 8);
+                    SMBUS_LOG("Firmware Version: 0x%04X", fw_version);
                 }
             }
         }
         
+        // Example 4: Create mock battery telemetry data and send to vescan task
+        SMBUS_LOG("Test 4: Sending battery data to VESCAN task");
+        BatteryTelemetryData batteryData;
+        
+        // Mock data for demonstration (in real application, read from BQ40Z80)
+        batteryData.voltage_mv = 3700 + (test_num % 1000);     // Mock voltage 3.7-4.7V
+        batteryData.current_ma = -500 + (test_num % 1000);     // Mock current -0.5 to +0.5A
+        batteryData.soc_percent = 50 + (test_num % 50);        // Mock SOC 50-100%
+        batteryData.soh_percent = 95;                          // Mock SOH 95%
+        batteryData.temp_deciK = 2981;                         // Mock temp ~25°C (298.1K)
+        batteryData.device_type = 0x4080;                      // BQ40Z80 device type
+        batteryData.fw_version = fw_version;                   // Use actual firmware version
+        batteryData.timestamp = xTaskGetTickCount();           // Current system tick
+        
+        // Send to VESCAN task (temporarily disabled for debugging)
+        SMBUS_LOG("Skipping VESCAN queue send (disabled for debugging)");
+        /*
+        if (vescanSendBatteryData(&batteryData) == pdTRUE) {
+            SMBUS_LOG("Battery data sent to VESCAN task successfully");
+        } else {
+            SMBUS_LOG("Failed to send battery data to VESCAN task");
+        }
+        */
+        
         // Wait before next iteration
+        SMBUS_LOG("Delaying 5000ms before next test cycle...");
+        uint32_t start_tick = xTaskGetTickCount();
         vTaskDelay(5000);
+        uint32_t end_tick = xTaskGetTickCount();
+        SMBUS_LOG("Delay completed. Actual time: %lu ms", end_tick - start_tick);
     }
 }
 

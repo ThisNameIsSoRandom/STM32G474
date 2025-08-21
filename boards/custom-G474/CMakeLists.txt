@@ -13,7 +13,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
 # Setup C++ compiler settings
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
@@ -30,7 +30,6 @@ set(STM32_MCU_FLAGS "-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard"
 set(STM32_LINKER_SCRIPT "STM32G474XX_FLASH.ld")
 set(STM32_LINKER_OPTION "")
 
-# Include toolchain file
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/gcc-arm-none-eabi.cmake)
 
 # Enable compile command to ease indexing with e.g. clangd
@@ -45,6 +44,9 @@ enable_language(C CXX ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+
+# Pass platform-specific definitions to app library
+add_compile_definitions(STM32G474xx USE_HAL_DRIVER)
 
 # Include app from parent directory (builds automatically)
 add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
@@ -100,9 +102,23 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Force main.c to be compiled as C++
 set_source_files_properties(Core/Src/main.c PROPERTIES LANGUAGE CXX)
 
+# Make board-specific headers available to app
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Inc/Legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32G4xx/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Include
+)
+
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/Src/RTT/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/Src/Tasks/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/Src/BQ40Z80/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/Src/VESCCan/Inc
 )
 
 # Add project symbols (macros)

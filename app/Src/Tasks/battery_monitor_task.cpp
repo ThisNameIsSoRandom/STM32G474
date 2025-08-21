@@ -32,6 +32,14 @@
 #include "BQ40Z80/bq40z80.h"
 #include "SEGGER_RTT.h"
 
+// Platform-aware logging
+#ifdef STM32G474xx
+#include <stdio.h>
+#define BATTERY_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
+#else
+#define BATTERY_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
+#endif
+
 /**
  * @brief Battery monitoring task entry point
  * @param pvParameters Pointer to BatteryTaskConfig structure
@@ -54,19 +62,19 @@ extern "C" void batteryMonitorTask(void *pvParameters) {
     
     // Validate configuration
     if (!config) {
-        SEGGER_RTT_printf(0, "Battery Monitor Task: No configuration provided\n");
+        BATTERY_LOG("Battery Monitor Task: No configuration provided");
         vTaskDelete(NULL);
         return;
     }
     
     if (!config->i2c_handle) {
-        SEGGER_RTT_printf(0, "Battery Monitor Task: Invalid I2C handle\n");
+        BATTERY_LOG("Battery Monitor Task: Invalid I2C handle");
         vTaskDelete(NULL);
         return;
     }
     
     const char* task_name = config->task_name ? config->task_name : "Battery";
-    SEGGER_RTT_printf(0, "%s: Starting with I2C handle 0x%08X\n", task_name, (uint32_t)config->i2c_handle);
+    BATTERY_LOG("%s: Starting with I2C handle 0x%08lX", task_name, (uint32_t)config->i2c_handle);
     
     // Create custom configuration for BQ40Z80 driver
     BQ40Z80::Config driver_config = BQ40Z80::Driver::defaultConfig();
@@ -78,12 +86,12 @@ extern "C" void batteryMonitorTask(void *pvParameters) {
     // Initialize communication and perform device recovery if needed
     HAL_StatusTypeDef status = battery.init();
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "%s: Failed to initialize battery driver (status=%d)\n", task_name, status);
+        BATTERY_LOG("%s: Failed to initialize battery driver (status=%d)", task_name, status);
         vTaskDelete(NULL);
         return;
     }
     
-    SEGGER_RTT_printf(0, "%s: Battery driver initialized successfully\n", task_name);
+    BATTERY_LOG("%s: Battery driver initialized successfully", task_name);
     
     // Main monitoring loop - runs until task is deleted or system reset
     while (1) {

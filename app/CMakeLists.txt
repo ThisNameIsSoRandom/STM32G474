@@ -25,6 +25,7 @@ The app library is organized into modular components:
 │   ├── RTT/               # SEGGER Real-Time Transfer (logging/debug)
 │   ├── Tasks/             # FreeRTOS task implementations
 │   ├── BQ40Z80/           # Battery management IC driver
+│   ├── VESCCan/           # VESC motor controller CAN communication
 │   ├── logging.cpp        # Logging infrastructure
 │   └── placeholder.cpp    # Template implementation
 └── tests/                 # Unit tests (when ENABLE_UNIT_TESTS=ON)
@@ -44,6 +45,7 @@ LIBRARY FEATURES:
 DEPENDENCIES:
 - SEGGER RTT (for logging and debug output)
 - FreeRTOS (task management - provided by board projects)
+- VESCCan (VESC motor controller CAN communication)
 - Google Test (unit testing - optional)
 
 INTEGRATION:
@@ -106,10 +108,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/Inc
 )
 
-# Add subdirectories for RTT, Tasks, and BQ40Z80
+# Add subdirectories for RTT, Tasks, BQ40Z80, and VESCCan
 add_subdirectory(Src/RTT)
 add_subdirectory(Src/Tasks)
 add_subdirectory(Src/BQ40Z80)
+add_subdirectory(Src/VESCCan)
 
 # Add tests subdirectory if unit tests are enabled
 if(ENABLE_UNIT_TESTS)
@@ -121,6 +124,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     RTT
     Tasks
     BQ40Z80
+    VESCCan
 )
 
 # Note: app_tests library will be linked at the executable level, not here
@@ -149,7 +153,7 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # Export targets to build directory for immediate use
 # Only export core libraries, not test library (to avoid circular dependency)
-export(TARGETS ${PROJECT_NAME} RTT Tasks BQ40Z80
+export(TARGETS ${PROJECT_NAME} RTT Tasks BQ40Z80 VESCCan
     NAMESPACE ${PROJECT_NAME}::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
 )
@@ -168,7 +172,7 @@ if(NOT IDE_CONFIG_GENERATION_ONLY)
         PROJECT_NAME "${PROJECT_NAME}"
         PROJECT_TYPE "LIBRARY"
         SOURCE_DIRS Inc Src
-        INCLUDE_DIRS Inc Src/RTT/Inc Src/Tasks/Inc Src/BQ40Z80/Inc
+        INCLUDE_DIRS Inc Src/RTT/Inc Src/Tasks/Inc Src/BQ40Z80/Inc Src/VESCCan/Inc
     )
 
     # Generate VSCode project files for app library
@@ -177,6 +181,6 @@ if(NOT IDE_CONFIG_GENERATION_ONLY)
         PROJECT_NAME "${PROJECT_NAME}"
         PROJECT_TYPE "LIBRARY"
         SOURCE_DIRS Inc Src
-        INCLUDE_DIRS Inc Src/RTT/Inc Src/Tasks/Inc Src/BQ40Z80/Inc
+        INCLUDE_DIRS Inc Src/RTT/Inc Src/Tasks/Inc Src/BQ40Z80/Inc Src/VESCCan/Inc
     )
 endif()

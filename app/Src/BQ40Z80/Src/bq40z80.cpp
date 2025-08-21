@@ -22,6 +22,14 @@
 #include <vector>
 #include <cstring>
 
+// Platform-aware logging
+#ifdef STM32G474xx
+#include <stdio.h>
+#define BQ_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
+#else
+#define BQ_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
+#endif
+
 namespace BQ40Z80 {
 
 // ============================================================================
@@ -65,7 +73,7 @@ Config Driver::defaultConfig() {
  * 3. Verification that normal operation has resumed
  */
 HAL_StatusTypeDef Driver::init() {
-    SEGGER_RTT_printf(0, "BQ40Z80: Initializing battery gauge at address 0x0B\n");
+    BQ_LOG("BQ40Z80: Initializing battery gauge at address 0x0B");
     
     // Test basic communication by reading BatteryMode register
     uint16_t batteryMode;
@@ -74,13 +82,13 @@ HAL_StatusTypeDef Driver::init() {
     if (status == HAL_OK) {
         // Expected value for normal operation (may vary by configuration)
         if (batteryMode == 0x6081) {
-            SEGGER_RTT_printf(0, "BQ40Z80: Device functional - BatteryMode: 0x%04X\n", batteryMode);
+            BQ_LOG("BQ40Z80: Device functional - BatteryMode: 0x%04X", batteryMode);
             return HAL_OK;
         } 
         // 0x16CC indicates device is frozen/sealed
         else if (batteryMode == 0x16CC) {
-            SEGGER_RTT_printf(0, "BQ40Z80: Device frozen - all SBS registers return 0x16CC\n");
-            SEGGER_RTT_printf(0, "BQ40Z80: Attempting recovery sequence...\n");
+            BQ_LOG("BQ40Z80: Device frozen - all SBS registers return 0x16CC");
+            BQ_LOG("BQ40Z80: Attempting recovery sequence...");
             
             // Step 1: Reset the device to clear error states
             manufacturerCommand(0x0041); // MFA_DEVICE_RESET
@@ -95,18 +103,18 @@ HAL_StatusTypeDef Driver::init() {
             // Step 3: Verify recovery was successful
             uint16_t testMode;
             if (readWord(0x03, testMode) == HAL_OK && testMode != 0x16CC) {
-                SEGGER_RTT_printf(0, "BQ40Z80: Recovery successful\n");
+                BQ_LOG("BQ40Z80: Recovery successful");
                 return HAL_OK;
             } else {
-                SEGGER_RTT_printf(0, "BQ40Z80: Recovery failed - device firmware corrupted\n");
+                BQ_LOG("BQ40Z80: Recovery failed - device firmware corrupted");
                 // Continue anyway - ManufacturerBlockAccess may still work
             }
         }
     } else {
-        SEGGER_RTT_printf(0, "BQ40Z80: Communication failed (status: %d)\n", status);
+        BQ_LOG("BQ40Z80: Communication failed (status: %d)", status);
     }
     
-    SEGGER_RTT_printf(0, "BQ40Z80: Initialization complete (limited functionality)\n");
+    BQ_LOG("BQ40Z80: Initialization complete (limited functionality)");
     return HAL_OK; // Return OK to allow fallback mechanisms to work
 }
 
@@ -123,7 +131,7 @@ HAL_StatusTypeDef Driver::read(Reading what, uint16_t& value) {
     if (status == HAL_OK) {
         // 0x16CC is a sentinel value indicating device is sealed/frozen
         if (value == 0x16CC) {
-            SEGGER_RTT_printf(0, "BQ40Z80: SBS register 0x%02X returned 0x16CC (device sealed), using MAC fallback\n", 
+            BQ_LOG("BQ40Z80: SBS register 0x%02X returned 0x16CC (device sealed), using MAC fallback", 
                              static_cast<uint8_t>(what));
             
             // ManufacturerBlockAccess can read data even when device is sealed
@@ -133,7 +141,7 @@ HAL_StatusTypeDef Driver::read(Reading what, uint16_t& value) {
     }
     
     // If SBS failed entirely (communication error), still try MAC as last resort
-    SEGGER_RTT_printf(0, "BQ40Z80: SBS command 0x%02X failed, trying ManufacturerBlockAccess\n", 
+    BQ_LOG("BQ40Z80: SBS command 0x%02X failed, trying ManufacturerBlockAccess", 
                      static_cast<uint8_t>(what));
     return manufacturerBlockAccessRead(static_cast<uint8_t>(what), value);
 }
@@ -213,7 +221,7 @@ HAL_StatusTypeDef Driver::read(Reading what, Status& value) {
     
     // If standard register returns constant 0x16CC, try ManufacturerBlockAccess fallback
     if (status == HAL_OK && rawStatus == 0x16CC) {
-        SEGGER_RTT_printf(0, "BQ40Z80: SBS BatteryStatus returned 0x16CC, trying ManufacturerBlockAccess\n");
+        BQ_LOG("BQ40Z80: SBS BatteryStatus returned 0x16CC, trying ManufacturerBlockAccess");
         status = manufacturerBlockAccessRead(static_cast<uint8_t>(Reading::BatteryStatus), rawStatus);
     }
     
@@ -231,9 +239,9 @@ HAL_StatusTypeDef Driver::read(Reading what, Status& value) {
         value.fullyDischarged = (rawStatus & 0x0010) != 0;
         value.errorCode = rawStatus & 0x000F;
         
-        SEGGER_RTT_printf(0, "BQ40Z80: BatteryStatus read: 0x%04X\n", rawStatus);
+        BQ_LOG("BQ40Z80: BatteryStatus read: 0x%04X", rawStatus);
     } else {
-        SEGGER_RTT_printf(0, "BQ40Z80: Failed to read BatteryStatus (tried both SBS and MAC)\n");
+        BQ_LOG("BQ40Z80: Failed to read BatteryStatus (tried both SBS and MAC)");
     }
     
     return status;
@@ -274,7 +282,7 @@ HAL_StatusTypeDef Driver::read(Reading what, BatteryData& value) {
     // Try to read CycleCount, but don't fail if it's problematic
     status = read(Reading::CycleCount, value.cycleCount);
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "BQ40Z80: Warning - CycleCount read failed, setting to 0\n");
+        BQ_LOG("BQ40Z80: Warning - CycleCount read failed, setting to 0");
         value.cycleCount = 0;  // Set to 0 if read fails
     }
     applyCommandDelay();
@@ -282,7 +290,7 @@ HAL_StatusTypeDef Driver::read(Reading what, BatteryData& value) {
     // Read battery status using standard SMBus
     status = read(Reading::BatteryStatus, value.status);
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "BQ40Z80: Failed to read battery status in AllBatteryData\n");
+        BQ_LOG("BQ40Z80: Failed to read battery status in AllBatteryData");
         return status; // Status is critical, so fail if it can't be read
     }
     
@@ -325,42 +333,55 @@ HAL_StatusTypeDef Driver::writeMAC(MACCommand command, uint16_t value) {
 
 
 void Driver::printBatteryReport() {
-    SEGGER_RTT_printf(0, "\n");
-    SEGGER_RTT_printf(0, "================== BQ40Z80 BATTERY STATUS REPORT ==================\n");
+    BQ_LOG("");
+    BQ_LOG("================== BQ40Z80 BATTERY STATUS REPORT ==================");
     
     // Read all battery data
     BatteryData data;
     HAL_StatusTypeDef status = read(Reading::AllBatteryData, data);
     
     if (status != HAL_OK) {
-        SEGGER_RTT_printf(0, "ERROR: Failed to read complete battery data (status: %d)\n", status);
-        SEGGER_RTT_printf(0, "====================================================================\n\n");
+        BQ_LOG("ERROR: Failed to read complete battery data (status: %d)", status);
+        BQ_LOG("====================================================================");
+        BQ_LOG("");
         return;
     }
     
     // Basic measurements
-    SEGGER_RTT_printf(0, "BASIC MEASUREMENTS:\n");
-    SEGGER_RTT_printf(0, "  Voltage:           %d.%03d V\n", data.voltage / 1000, data.voltage % 1000);
-    SEGGER_RTT_printf(0, "  Current:           %d mA", data.current);
+    BQ_LOG("BASIC MEASUREMENTS:");
+    BQ_LOG("  Voltage:           %d.%03d V", data.voltage / 1000, data.voltage % 1000);
+    BQ_LOG("  Current:           %d mA", data.current);
     if (data.current > 0) {
+#ifdef STM32G474xx
+        printf(" (CHARGING)\n");
+#else
         SEGGER_RTT_printf(0, " (CHARGING)\n");
+#endif
     } else if (data.current < 0) {
+#ifdef STM32G474xx
+        printf(" (DISCHARGING)\n");
+#else
         SEGGER_RTT_printf(0, " (DISCHARGING)\n");
+#endif
     } else {
+#ifdef STM32G474xx
+        printf(" (IDLE)\n");
+#else
         SEGGER_RTT_printf(0, " (IDLE)\n");
+#endif
     }
-    SEGGER_RTT_printf(0, "  Temperature:       %.1f°C\n", temperatureToC(data.temperature));
-    SEGGER_RTT_printf(0, "\n");
+    BQ_LOG("  Temperature:       %.1f°C", temperatureToC(data.temperature));
+    BQ_LOG("");
     
     // Capacity information
-    SEGGER_RTT_printf(0, "CAPACITY:\n");
-    SEGGER_RTT_printf(0, "  State of Charge:   %d%%\n", data.stateOfCharge);
-    SEGGER_RTT_printf(0, "  Remaining:         %d mAh\n", data.remainingCapacity);
-    SEGGER_RTT_printf(0, "  Full Capacity:     %d mAh\n", data.fullChargeCapacity);
+    BQ_LOG("CAPACITY:");
+    BQ_LOG("  State of Charge:   %d%%", data.stateOfCharge);
+    BQ_LOG("  Remaining:         %d mAh", data.remainingCapacity);
+    BQ_LOG("  Full Capacity:     %d mAh", data.fullChargeCapacity);
     if (data.cycleCount == 0) {
-        SEGGER_RTT_printf(0, "  Cycle Count:       N/A (read failed)\n");
+        BQ_LOG("  Cycle Count:       N/A (read failed)");
     } else {
-        SEGGER_RTT_printf(0, "  Cycle Count:       %d cycles\n", data.cycleCount);
+        BQ_LOG("  Cycle Count:       %d cycles", data.cycleCount);
     }
     
     // Calculate capacity health
@@ -368,86 +389,95 @@ void Driver::printBatteryReport() {
         // Assume design capacity is around 3000mAh based on current readings
         uint16_t designCapacity = 3000;
         float health = (float)data.fullChargeCapacity / designCapacity * 100.0f;
-        SEGGER_RTT_printf(0, "  Battery Health:    %.1f%% (estimated)\n", health);
+        BQ_LOG("  Battery Health:    %.1f%% (estimated)", health);
     }
-    SEGGER_RTT_printf(0, "\n");
+    BQ_LOG("");
     
     // Status flags
-    SEGGER_RTT_printf(0, "STATUS FLAGS:\n");
-    SEGGER_RTT_printf(0, "  Initialized:       %s\n", data.status.initialized ? "YES" : "NO");
-    SEGGER_RTT_printf(0, "  Fully Charged:     %s\n", data.status.fullyCharged ? "YES" : "NO");
-    SEGGER_RTT_printf(0, "  Fully Discharged:  %s\n", data.status.fullyDischarged ? "YES" : "NO");
-    SEGGER_RTT_printf(0, "  Discharging:       %s\n", data.status.discharging ? "YES" : "NO");
-    SEGGER_RTT_printf(0, "\n");
+    BQ_LOG("STATUS FLAGS:");
+    BQ_LOG("  Initialized:       %s", data.status.initialized ? "YES" : "NO");
+    BQ_LOG("  Fully Charged:     %s", data.status.fullyCharged ? "YES" : "NO");
+    BQ_LOG("  Fully Discharged:  %s", data.status.fullyDischarged ? "YES" : "NO");
+    BQ_LOG("  Discharging:       %s", data.status.discharging ? "YES" : "NO");
+    BQ_LOG("");
     
     // Alarms
-    SEGGER_RTT_printf(0, "ALARMS:\n");
+    BQ_LOG("ALARMS:");
     bool anyAlarm = false;
     if (data.status.overChargedAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  OVER CHARGED ALARM\n");
+        BQ_LOG("  ⚠️  OVER CHARGED ALARM");
         anyAlarm = true;
     }
     if (data.status.terminateChargeAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  TERMINATE CHARGE ALARM\n");
+        BQ_LOG("  ⚠️  TERMINATE CHARGE ALARM");
         anyAlarm = true;
     }
     if (data.status.overTempAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  OVER TEMPERATURE ALARM\n");
+        BQ_LOG("  ⚠️  OVER TEMPERATURE ALARM");
         anyAlarm = true;
     }
     if (data.status.terminateDischargeAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  TERMINATE DISCHARGE ALARM\n");
+        BQ_LOG("  ⚠️  TERMINATE DISCHARGE ALARM");
         anyAlarm = true;
     }
     if (data.status.remainingCapacityAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  LOW CAPACITY ALARM\n");
+        BQ_LOG("  ⚠️  LOW CAPACITY ALARM");
         anyAlarm = true;
     }
     if (data.status.remainingTimeAlarm) {
-        SEGGER_RTT_printf(0, "  ⚠️  LOW TIME ALARM\n");
+        BQ_LOG("  ⚠️  LOW TIME ALARM");
         anyAlarm = true;
     }
     if (!anyAlarm) {
-        SEGGER_RTT_printf(0, "  ✅ No active alarms\n");
+        BQ_LOG("  ✅ No active alarms");
     }
     if (data.status.errorCode != 0) {
-        SEGGER_RTT_printf(0, "  ❌ Error Code: 0x%X\n", data.status.errorCode);
+        BQ_LOG("  ❌ Error Code: 0x%X", data.status.errorCode);
     }
-    SEGGER_RTT_printf(0, "\n");
+    BQ_LOG("");
     
     // Calculated information
-    SEGGER_RTT_printf(0, "CALCULATED INFO:\n");
+    BQ_LOG("CALCULATED INFO:");
     
     // Estimated runtime
     if (data.current < 0) {  // Discharging
         uint32_t runtime_minutes = (uint32_t)data.remainingCapacity * 60 / (-data.current);
         uint32_t hours = runtime_minutes / 60;
         uint32_t minutes = runtime_minutes % 60;
-        SEGGER_RTT_printf(0, "  Est. Runtime:      %d hours, %d minutes\n", hours, minutes);
+        BQ_LOG("  Est. Runtime:      %d hours, %d minutes", hours, minutes);
     } else if (data.current > 0 && data.stateOfCharge < 100) {  // Charging
         uint32_t charge_time_minutes = (uint32_t)(data.fullChargeCapacity - data.remainingCapacity) * 60 / data.current;
         uint32_t hours = charge_time_minutes / 60;
         uint32_t minutes = charge_time_minutes % 60;
-        SEGGER_RTT_printf(0, "  Est. Charge Time:  %d hours, %d minutes\n", hours, minutes);
+        BQ_LOG("  Est. Charge Time:  %d hours, %d minutes", hours, minutes);
     } else {
-        SEGGER_RTT_printf(0, "  Runtime:           N/A (idle/full)\n");
+        BQ_LOG("  Runtime:           N/A (idle/full)");
     }
     
     // Power calculation
     uint32_t power_mW = (uint32_t)data.voltage * abs(data.current) / 1000;
-    SEGGER_RTT_printf(0, "  Current Power:     %d.%03d W", power_mW / 1000, power_mW % 1000);
+    BQ_LOG("  Current Power:     %d.%03d W", power_mW / 1000, power_mW % 1000);
     if (data.current != 0) {
+#ifdef STM32G474xx
+        printf(" (%s)", data.current > 0 ? "charging" : "discharging");
+#else
         SEGGER_RTT_printf(0, " (%s)", data.current > 0 ? "charging" : "discharging");
+#endif
     }
+#ifdef STM32G474xx
+    printf("\n");
+#else
     SEGGER_RTT_printf(0, "\n");
+#endif
     
     // Energy calculations
     uint32_t energy_remaining_Wh = (uint32_t)data.remainingCapacity * data.voltage / 1000000;
     uint32_t energy_full_Wh = (uint32_t)data.fullChargeCapacity * data.voltage / 1000000;
-    SEGGER_RTT_printf(0, "  Energy Remaining:  %d.%03d Wh\n", energy_remaining_Wh / 1000, energy_remaining_Wh % 1000);
-    SEGGER_RTT_printf(0, "  Energy Full:       %d.%03d Wh\n", energy_full_Wh / 1000, energy_full_Wh % 1000);
+    BQ_LOG("  Energy Remaining:  %d.%03d Wh", energy_remaining_Wh / 1000, energy_remaining_Wh % 1000);
+    BQ_LOG("  Energy Full:       %d.%03d Wh", energy_full_Wh / 1000, energy_full_Wh % 1000);
     
-    SEGGER_RTT_printf(0, "====================================================================\n\n");
+    BQ_LOG("====================================================================");
+    BQ_LOG("");
 }
 
 } // namespace BQ40Z80
