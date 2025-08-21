@@ -16,18 +16,23 @@
  */
 
 #include "BQ40Z80/bq40z80.h"
-#include "hal_types.h"
 #include "freertos_types.h"
-#include "SEGGER_RTT.h"
 #include <vector>
 #include <cstring>
 
-// Platform-aware logging
+// Include hal_types.h for DEBUG_LOG macro - must be after other includes
+#include "hal_types.h"
+
+// STM32 HAL for HAL_GetTick function - use weak declaration to avoid include issues
+extern "C" uint32_t HAL_GetTick(void);
+
+// Local definition of DEBUG_LOG for BQ40Z80 files (outside namespace)
 #ifdef STM32G474xx
-#include <stdio.h>
-#define BQ_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
+    #include <cstdio>
+    #define DEBUG_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
 #else
-#define BQ_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
+    #include "SEGGER_RTT.h"
+    #define DEBUG_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
 #endif
 
 namespace BQ40Z80 {
@@ -73,7 +78,7 @@ Config Driver::defaultConfig() {
  * 3. Verification that normal operation has resumed
  */
 HAL_StatusTypeDef Driver::init() {
-    BQ_LOG("BQ40Z80: Initializing battery gauge at address 0x0B");
+    DEBUG_LOG("BQ40Z80: Initializing battery gauge at address 0x0B");
     
     // Test basic communication by reading BatteryMode register
     uint16_t batteryMode;
@@ -82,13 +87,13 @@ HAL_StatusTypeDef Driver::init() {
     if (status == HAL_OK) {
         // Expected value for normal operation (may vary by configuration)
         if (batteryMode == 0x6081) {
-            BQ_LOG("BQ40Z80: Device functional - BatteryMode: 0x%04X", batteryMode);
+            DEBUG_LOG("BQ40Z80: Device functional - BatteryMode: 0x%04X", batteryMode);
             return HAL_OK;
         } 
         // 0x16CC indicates device is frozen/sealed
         else if (batteryMode == 0x16CC) {
-            BQ_LOG("BQ40Z80: Device frozen - all SBS registers return 0x16CC");
-            BQ_LOG("BQ40Z80: Attempting recovery sequence...");
+            DEBUG_LOG("BQ40Z80: Device frozen - all SBS registers return 0x16CC");
+            DEBUG_LOG("BQ40Z80: Attempting recovery sequence...");
             
             // Step 1: Reset the device to clear error states
             manufacturerCommand(0x0041); // MFA_DEVICE_RESET
@@ -103,18 +108,18 @@ HAL_StatusTypeDef Driver::init() {
             // Step 3: Verify recovery was successful
             uint16_t testMode;
             if (readWord(0x03, testMode) == HAL_OK && testMode != 0x16CC) {
-                BQ_LOG("BQ40Z80: Recovery successful");
+                DEBUG_LOG("BQ40Z80: Recovery successful");
                 return HAL_OK;
             } else {
-                BQ_LOG("BQ40Z80: Recovery failed - device firmware corrupted");
+                DEBUG_LOG("BQ40Z80: Recovery failed - device firmware corrupted");
                 // Continue anyway - ManufacturerBlockAccess may still work
             }
         }
     } else {
-        BQ_LOG("BQ40Z80: Communication failed (status: %d)", status);
+        DEBUG_LOG("BQ40Z80: Communication failed (status: %d)", status);
     }
     
-    BQ_LOG("BQ40Z80: Initialization complete (limited functionality)");
+    DEBUG_LOG("BQ40Z80: Initialization complete (limited functionality)");
     return HAL_OK; // Return OK to allow fallback mechanisms to work
 }
 
@@ -131,7 +136,7 @@ HAL_StatusTypeDef Driver::read(Reading what, uint16_t& value) {
     if (status == HAL_OK) {
         // 0x16CC is a sentinel value indicating device is sealed/frozen
         if (value == 0x16CC) {
-            BQ_LOG("BQ40Z80: SBS register 0x%02X returned 0x16CC (device sealed), using MAC fallback", 
+            DEBUG_LOG("BQ40Z80: SBS register 0x%02X returned 0x16CC (device sealed), using MAC fallback", 
                              static_cast<uint8_t>(what));
             
             // ManufacturerBlockAccess can read data even when device is sealed
@@ -141,7 +146,7 @@ HAL_StatusTypeDef Driver::read(Reading what, uint16_t& value) {
     }
     
     // If SBS failed entirely (communication error), still try MAC as last resort
-    BQ_LOG("BQ40Z80: SBS command 0x%02X failed, trying ManufacturerBlockAccess", 
+    DEBUG_LOG("BQ40Z80: SBS command 0x%02X failed, trying ManufacturerBlockAccess", 
                      static_cast<uint8_t>(what));
     return manufacturerBlockAccessRead(static_cast<uint8_t>(what), value);
 }
@@ -221,7 +226,7 @@ HAL_StatusTypeDef Driver::read(Reading what, Status& value) {
     
     // If standard register returns constant 0x16CC, try ManufacturerBlockAccess fallback
     if (status == HAL_OK && rawStatus == 0x16CC) {
-        BQ_LOG("BQ40Z80: SBS BatteryStatus returned 0x16CC, trying ManufacturerBlockAccess");
+        DEBUG_LOG("BQ40Z80: SBS BatteryStatus returned 0x16CC, trying ManufacturerBlockAccess");
         status = manufacturerBlockAccessRead(static_cast<uint8_t>(Reading::BatteryStatus), rawStatus);
     }
     
@@ -239,9 +244,9 @@ HAL_StatusTypeDef Driver::read(Reading what, Status& value) {
         value.fullyDischarged = (rawStatus & 0x0010) != 0;
         value.errorCode = rawStatus & 0x000F;
         
-        BQ_LOG("BQ40Z80: BatteryStatus read: 0x%04X", rawStatus);
+        DEBUG_LOG("BQ40Z80: BatteryStatus read: 0x%04X", rawStatus);
     } else {
-        BQ_LOG("BQ40Z80: Failed to read BatteryStatus (tried both SBS and MAC)");
+        DEBUG_LOG("BQ40Z80: Failed to read BatteryStatus (tried both SBS and MAC)");
     }
     
     return status;
@@ -282,7 +287,7 @@ HAL_StatusTypeDef Driver::read(Reading what, BatteryData& value) {
     // Try to read CycleCount, but don't fail if it's problematic
     status = read(Reading::CycleCount, value.cycleCount);
     if (status != HAL_OK) {
-        BQ_LOG("BQ40Z80: Warning - CycleCount read failed, setting to 0");
+        DEBUG_LOG("BQ40Z80: Warning - CycleCount read failed, setting to 0");
         value.cycleCount = 0;  // Set to 0 if read fails
     }
     applyCommandDelay();
@@ -290,7 +295,7 @@ HAL_StatusTypeDef Driver::read(Reading what, BatteryData& value) {
     // Read battery status using standard SMBus
     status = read(Reading::BatteryStatus, value.status);
     if (status != HAL_OK) {
-        BQ_LOG("BQ40Z80: Failed to read battery status in AllBatteryData");
+        DEBUG_LOG("BQ40Z80: Failed to read battery status in AllBatteryData");
         return status; // Status is critical, so fail if it can't be read
     }
     
@@ -333,24 +338,24 @@ HAL_StatusTypeDef Driver::writeMAC(MACCommand command, uint16_t value) {
 
 
 void Driver::printBatteryReport() {
-    BQ_LOG("");
-    BQ_LOG("================== BQ40Z80 BATTERY STATUS REPORT ==================");
+    DEBUG_LOG("");
+    DEBUG_LOG("================== BQ40Z80 BATTERY STATUS REPORT ==================");
     
     // Read all battery data
     BatteryData data;
     HAL_StatusTypeDef status = read(Reading::AllBatteryData, data);
     
     if (status != HAL_OK) {
-        BQ_LOG("ERROR: Failed to read complete battery data (status: %d)", status);
-        BQ_LOG("====================================================================");
-        BQ_LOG("");
+        DEBUG_LOG("ERROR: Failed to read complete battery data (status: %d)", status);
+        DEBUG_LOG("====================================================================");
+        DEBUG_LOG("");
         return;
     }
     
     // Basic measurements
-    BQ_LOG("BASIC MEASUREMENTS:");
-    BQ_LOG("  Voltage:           %d.%03d V", data.voltage / 1000, data.voltage % 1000);
-    BQ_LOG("  Current:           %d mA", data.current);
+    DEBUG_LOG("BASIC MEASUREMENTS:");
+    DEBUG_LOG("  Voltage:           %d.%03d V", data.voltage / 1000, data.voltage % 1000);
+    DEBUG_LOG("  Current:           %d mA", data.current);
     if (data.current > 0) {
 #ifdef STM32G474xx
         printf(" (CHARGING)\n");
@@ -370,18 +375,18 @@ void Driver::printBatteryReport() {
         SEGGER_RTT_printf(0, " (IDLE)\n");
 #endif
     }
-    BQ_LOG("  Temperature:       %.1f°C", temperatureToC(data.temperature));
-    BQ_LOG("");
+    DEBUG_LOG("  Temperature:       %.1f°C", temperatureToC(data.temperature));
+    DEBUG_LOG("");
     
     // Capacity information
-    BQ_LOG("CAPACITY:");
-    BQ_LOG("  State of Charge:   %d%%", data.stateOfCharge);
-    BQ_LOG("  Remaining:         %d mAh", data.remainingCapacity);
-    BQ_LOG("  Full Capacity:     %d mAh", data.fullChargeCapacity);
+    DEBUG_LOG("CAPACITY:");
+    DEBUG_LOG("  State of Charge:   %d%%", data.stateOfCharge);
+    DEBUG_LOG("  Remaining:         %d mAh", data.remainingCapacity);
+    DEBUG_LOG("  Full Capacity:     %d mAh", data.fullChargeCapacity);
     if (data.cycleCount == 0) {
-        BQ_LOG("  Cycle Count:       N/A (read failed)");
+        DEBUG_LOG("  Cycle Count:       N/A (read failed)");
     } else {
-        BQ_LOG("  Cycle Count:       %d cycles", data.cycleCount);
+        DEBUG_LOG("  Cycle Count:       %d cycles", data.cycleCount);
     }
     
     // Calculate capacity health
@@ -389,74 +394,74 @@ void Driver::printBatteryReport() {
         // Assume design capacity is around 3000mAh based on current readings
         uint16_t designCapacity = 3000;
         float health = (float)data.fullChargeCapacity / designCapacity * 100.0f;
-        BQ_LOG("  Battery Health:    %.1f%% (estimated)", health);
+        DEBUG_LOG("  Battery Health:    %.1f%% (estimated)", health);
     }
-    BQ_LOG("");
+    DEBUG_LOG("");
     
     // Status flags
-    BQ_LOG("STATUS FLAGS:");
-    BQ_LOG("  Initialized:       %s", data.status.initialized ? "YES" : "NO");
-    BQ_LOG("  Fully Charged:     %s", data.status.fullyCharged ? "YES" : "NO");
-    BQ_LOG("  Fully Discharged:  %s", data.status.fullyDischarged ? "YES" : "NO");
-    BQ_LOG("  Discharging:       %s", data.status.discharging ? "YES" : "NO");
-    BQ_LOG("");
+    DEBUG_LOG("STATUS FLAGS:");
+    DEBUG_LOG("  Initialized:       %s", data.status.initialized ? "YES" : "NO");
+    DEBUG_LOG("  Fully Charged:     %s", data.status.fullyCharged ? "YES" : "NO");
+    DEBUG_LOG("  Fully Discharged:  %s", data.status.fullyDischarged ? "YES" : "NO");
+    DEBUG_LOG("  Discharging:       %s", data.status.discharging ? "YES" : "NO");
+    DEBUG_LOG("");
     
     // Alarms
-    BQ_LOG("ALARMS:");
+    DEBUG_LOG("ALARMS:");
     bool anyAlarm = false;
     if (data.status.overChargedAlarm) {
-        BQ_LOG("  ⚠️  OVER CHARGED ALARM");
+        DEBUG_LOG("  ⚠️  OVER CHARGED ALARM");
         anyAlarm = true;
     }
     if (data.status.terminateChargeAlarm) {
-        BQ_LOG("  ⚠️  TERMINATE CHARGE ALARM");
+        DEBUG_LOG("  ⚠️  TERMINATE CHARGE ALARM");
         anyAlarm = true;
     }
     if (data.status.overTempAlarm) {
-        BQ_LOG("  ⚠️  OVER TEMPERATURE ALARM");
+        DEBUG_LOG("  ⚠️  OVER TEMPERATURE ALARM");
         anyAlarm = true;
     }
     if (data.status.terminateDischargeAlarm) {
-        BQ_LOG("  ⚠️  TERMINATE DISCHARGE ALARM");
+        DEBUG_LOG("  ⚠️  TERMINATE DISCHARGE ALARM");
         anyAlarm = true;
     }
     if (data.status.remainingCapacityAlarm) {
-        BQ_LOG("  ⚠️  LOW CAPACITY ALARM");
+        DEBUG_LOG("  ⚠️  LOW CAPACITY ALARM");
         anyAlarm = true;
     }
     if (data.status.remainingTimeAlarm) {
-        BQ_LOG("  ⚠️  LOW TIME ALARM");
+        DEBUG_LOG("  ⚠️  LOW TIME ALARM");
         anyAlarm = true;
     }
     if (!anyAlarm) {
-        BQ_LOG("  ✅ No active alarms");
+        DEBUG_LOG("  ✅ No active alarms");
     }
     if (data.status.errorCode != 0) {
-        BQ_LOG("  ❌ Error Code: 0x%X", data.status.errorCode);
+        DEBUG_LOG("  ❌ Error Code: 0x%X", data.status.errorCode);
     }
-    BQ_LOG("");
+    DEBUG_LOG("");
     
     // Calculated information
-    BQ_LOG("CALCULATED INFO:");
+    DEBUG_LOG("CALCULATED INFO:");
     
     // Estimated runtime
     if (data.current < 0) {  // Discharging
         uint32_t runtime_minutes = (uint32_t)data.remainingCapacity * 60 / (-data.current);
         uint32_t hours = runtime_minutes / 60;
         uint32_t minutes = runtime_minutes % 60;
-        BQ_LOG("  Est. Runtime:      %d hours, %d minutes", hours, minutes);
+        DEBUG_LOG("  Est. Runtime:      %d hours, %d minutes", hours, minutes);
     } else if (data.current > 0 && data.stateOfCharge < 100) {  // Charging
         uint32_t charge_time_minutes = (uint32_t)(data.fullChargeCapacity - data.remainingCapacity) * 60 / data.current;
         uint32_t hours = charge_time_minutes / 60;
         uint32_t minutes = charge_time_minutes % 60;
-        BQ_LOG("  Est. Charge Time:  %d hours, %d minutes", hours, minutes);
+        DEBUG_LOG("  Est. Charge Time:  %d hours, %d minutes", hours, minutes);
     } else {
-        BQ_LOG("  Runtime:           N/A (idle/full)");
+        DEBUG_LOG("  Runtime:           N/A (idle/full)");
     }
     
     // Power calculation
     uint32_t power_mW = (uint32_t)data.voltage * abs(data.current) / 1000;
-    BQ_LOG("  Current Power:     %d.%03d W", power_mW / 1000, power_mW % 1000);
+    DEBUG_LOG("  Current Power:     %d.%03d W", power_mW / 1000, power_mW % 1000);
     if (data.current != 0) {
 #ifdef STM32G474xx
         printf(" (%s)", data.current > 0 ? "charging" : "discharging");
@@ -473,11 +478,59 @@ void Driver::printBatteryReport() {
     // Energy calculations
     uint32_t energy_remaining_Wh = (uint32_t)data.remainingCapacity * data.voltage / 1000000;
     uint32_t energy_full_Wh = (uint32_t)data.fullChargeCapacity * data.voltage / 1000000;
-    BQ_LOG("  Energy Remaining:  %d.%03d Wh", energy_remaining_Wh / 1000, energy_remaining_Wh % 1000);
-    BQ_LOG("  Energy Full:       %d.%03d Wh", energy_full_Wh / 1000, energy_full_Wh % 1000);
+    DEBUG_LOG("  Energy Remaining:  %d.%03d Wh", energy_remaining_Wh / 1000, energy_remaining_Wh % 1000);
+    DEBUG_LOG("  Energy Full:       %d.%03d Wh", energy_full_Wh / 1000, energy_full_Wh % 1000);
     
-    BQ_LOG("====================================================================");
-    BQ_LOG("");
+    DEBUG_LOG("====================================================================");
+    DEBUG_LOG("");
+}
+
+HAL_StatusTypeDef Driver::getBatteryTelemetryData(BatteryTelemetryData& telemetry) {
+    // Read all battery data in a single operation for consistency
+    BatteryData data;
+    HAL_StatusTypeDef status = read(Reading::AllBatteryData, data);
+    if (status != HAL_OK) {
+        DEBUG_LOG("BQ40Z80: Failed to read battery data for telemetry (status=%d)", status);
+        return status;
+    }
+    
+    // Clear the telemetry structure and set timestamp
+    memset(&telemetry, 0, sizeof(telemetry));
+    telemetry.timestamp_ms = HAL_GetTick();  // Use HAL tick for timestamp
+    
+    // Fill primary electrical measurements
+    telemetry.voltage_mV = data.voltage;
+    telemetry.current_mA = data.current;
+    telemetry.temperature_01K = data.temperature;
+    telemetry.state_of_charge = data.stateOfCharge;
+    
+    // Fill capacity and cycle information
+    telemetry.remaining_capacity_mAh = data.remainingCapacity;
+    telemetry.full_charge_capacity_mAh = data.fullChargeCapacity;
+    telemetry.cycle_count = data.cycleCount;
+    
+    // Fill status flags - map from Status struct to packed bit fields
+    telemetry.status_flags.over_charged_alarm = data.status.overChargedAlarm;
+    telemetry.status_flags.terminate_charge_alarm = data.status.terminateChargeAlarm;
+    telemetry.status_flags.over_temp_alarm = data.status.overTempAlarm;
+    telemetry.status_flags.terminate_discharge_alarm = data.status.terminateDischargeAlarm;
+    telemetry.status_flags.remaining_capacity_alarm = data.status.remainingCapacityAlarm;
+    telemetry.status_flags.remaining_time_alarm = data.status.remainingTimeAlarm;
+    telemetry.status_flags.initialized = data.status.initialized;
+    telemetry.status_flags.discharging = data.status.discharging;
+    
+    telemetry.status_flags_ext.fully_charged = data.status.fullyCharged;
+    telemetry.status_flags_ext.fully_discharged = data.status.fullyDischarged;
+    
+    telemetry.error_code = data.status.errorCode;
+    telemetry.data_quality = 0xFF;  // All data valid (could be enhanced with field-specific validation)
+    
+    DEBUG_LOG("BQ40Z80: Telemetry data prepared - V:%umV, I:%dmA, T:%u.%uK, SoC:%u%%", 
+              telemetry.voltage_mV, telemetry.current_mA, 
+              telemetry.temperature_01K/10, telemetry.temperature_01K%10, 
+              telemetry.state_of_charge);
+    
+    return HAL_OK;
 }
 
 } // namespace BQ40Z80

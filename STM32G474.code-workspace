@@ -9,14 +9,6 @@
             "path": "./boards/custom-G474"
         },
         {
-            "name": "nucleo-H755ZI-Q",
-            "path": "./boards/nucleo-H755ZI-Q"
-        },
-        {
-            "name": "nucleo-L476RG",
-            "path": "./boards/nucleo-L476RG"
-        },
-        {
             "name": "nucleo-U575ZI-Q",
             "path": "./boards/nucleo-U575ZI-Q"
         }
@@ -57,8 +49,6 @@
                 "dependsOn": [
                     "app: Build app",
                     "custom-G474: Build STM32G474",
-                    "nucleo-H755ZI-Q: Build nucleo-H755ZI-Q",
-                    "nucleo-L476RG: Build nucleo-L476RG",
                     "nucleo-U575ZI-Q: Build nucleo-U575ZI-Q"
                 ],
                 "dependsOrder": "parallel",
@@ -119,52 +109,6 @@
                 }
             },
             {
-                "label": "nucleo-H755ZI-Q: Build nucleo-H755ZI-Q",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-H755ZI-Q/cmake-build-debug",
-                    "--target", "nucleo-H755ZI-Q",
-                    "-j", "10"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": ["$gcc"],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-H755ZI-Q"
-                }
-            },
-            {
-                "label": "nucleo-L476RG: Build nucleo-L476RG",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-L476RG/cmake-build-debug",
-                    "--target", "nucleo-L476RG",
-                    "-j", "10"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": ["$gcc"],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-L476RG"
-                }
-            },
-            {
                 "label": "nucleo-U575ZI-Q: Build nucleo-U575ZI-Q",
                 "type": "shell",
                 "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
@@ -196,8 +140,6 @@
                 "dependsOn": [
                     "app: Configure CMake",
                     "custom-G474: Configure CMake",
-                    "nucleo-H755ZI-Q: Configure CMake",
-                    "nucleo-L476RG: Configure CMake",
                     "nucleo-U575ZI-Q: Configure CMake"
                 ],
                 "dependsOrder": "parallel",
@@ -263,60 +205,6 @@
                 }
             },
             {
-                "label": "nucleo-H755ZI-Q: Configure CMake",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "-B", "${workspaceFolder}/boards/nucleo-H755ZI-Q/cmake-build-debug",
-                    "-G", "Ninja",
-                    "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DCMAKE_MAKE_PROGRAM=C:/ST/STM32CubeCLT_1.18.0/Ninja/bin/ninja.exe",
-                    "-DCMAKE_C_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
-                    "-DCMAKE_CXX_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe",
-                    "-DBOARD=nucleo-H755ZI-Q"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-H755ZI-Q"
-                }
-            },
-            {
-                "label": "nucleo-L476RG: Configure CMake",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "-B", "${workspaceFolder}/boards/nucleo-L476RG/cmake-build-debug",
-                    "-G", "Ninja",
-                    "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DCMAKE_MAKE_PROGRAM=C:/ST/STM32CubeCLT_1.18.0/Ninja/bin/ninja.exe",
-                    "-DCMAKE_C_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
-                    "-DCMAKE_CXX_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe",
-                    "-DBOARD=nucleo-L476RG"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-L476RG"
-                }
-            },
-            {
                 "label": "nucleo-U575ZI-Q: Configure CMake",
                 "type": "shell",
                 "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
@@ -352,8 +240,6 @@
                 "dependsOn": [
                     "app: Clean Build",
                     "custom-G474: Clean Build",
-                    "nucleo-H755ZI-Q: Clean Build",
-                    "nucleo-L476RG: Clean Build",
                     "nucleo-U575ZI-Q: Clean Build"
                 ],
                 "dependsOrder": "parallel",
@@ -409,50 +295,6 @@
                 "problemMatcher": [],
                 "options": {
                     "cwd": "${workspaceFolder}/boards/custom-G474"
-                }
-            },
-            {
-                "label": "nucleo-H755ZI-Q: Clean Build",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-H755ZI-Q/cmake-build-debug",
-                    "--target", "clean"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-H755ZI-Q"
-                }
-            },
-            {
-                "label": "nucleo-L476RG: Clean Build",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-L476RG/cmake-build-debug",
-                    "--target", "clean"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-L476RG"
                 }
             },
             {

@@ -110,8 +110,6 @@ add_library(${PROJECT_NAME} STATIC)
 
 # Add task source files
 target_sources(${PROJECT_NAME} PRIVATE
-    smbus_task.cpp
-    uart_task.cpp
     battery_monitor_task.cpp
     vescan_task.cpp
     hal_implementations.cpp

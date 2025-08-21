@@ -7,7 +7,6 @@
 
 #include "hal_types.h"
 #include "freertos_types.h"
-#include "SEGGER_RTT.h"
 #define __weak __attribute__((used))  __attribute__((weak))
 
 extern "C" {
@@ -21,7 +20,7 @@ extern "C" {
  */
  __weak void HAL_Delay_MS(uint32_t ms)
 {
-    SEGGER_RTT_printf(0, "WARNING: HAL_Delay_MS(%u) not implemented by platform - no delay applied\n\r", (unsigned int)ms);
+    DEBUG_LOG("WARNING: HAL_Delay_MS(%u) not implemented by platform - no delay applied", (unsigned int)ms);
     // No delay in hollow implementation
 }
 
@@ -35,7 +34,7 @@ __weak HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16
     (void)pData;
     (void)Size;
     (void)Timeout;
-    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_Master_Transmit not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_I2C_Master_Transmit not implemented by platform");
     return HAL_OK;
 }
 
@@ -49,7 +48,7 @@ __weak HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_
     (void)pData;
     (void)Size;
     (void)Timeout;
-    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_Master_Receive not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_I2C_Master_Receive not implemented by platform");
     return HAL_OK;
 }
 
@@ -59,7 +58,7 @@ __weak HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_
 __weak HAL_I2C_StateTypeDef HAL_I2C_GetState(I2C_HandleTypeDef *hi2c)
 {
     (void)hi2c;
-    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_GetState not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_I2C_GetState not implemented by platform");
     return HAL_I2C_STATE_READY;
 }
 
@@ -69,7 +68,7 @@ __weak HAL_I2C_StateTypeDef HAL_I2C_GetState(I2C_HandleTypeDef *hi2c)
 __weak HAL_StatusTypeDef HAL_I2C_DeInit(I2C_HandleTypeDef *hi2c)
 {
     (void)hi2c;
-    SEGGER_RTT_printf(0, "WARNING: HAL_I2C_DeInit not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_I2C_DeInit not implemented by platform");
     return HAL_OK;
 }
 
@@ -79,7 +78,7 @@ __weak HAL_StatusTypeDef HAL_I2C_DeInit(I2C_HandleTypeDef *hi2c)
  */
 __weak void MX_I2C2_Init(void)
 {
-    SEGGER_RTT_printf(0, "WARNING: MX_I2C2_Init not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: MX_I2C2_Init not implemented by platform");
 }
 
 // ===============================
@@ -92,7 +91,7 @@ __weak void MX_I2C2_Init(void)
 __weak HAL_StatusTypeDef HAL_CAN_Start(CAN_HandleTypeDef *hcan)
 {
     (void)hcan;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_Start not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_Start not implemented by platform");
     return HAL_OK;
 }
 
@@ -102,7 +101,7 @@ __weak HAL_StatusTypeDef HAL_CAN_Start(CAN_HandleTypeDef *hcan)
 __weak HAL_StatusTypeDef HAL_CAN_Stop(CAN_HandleTypeDef *hcan)
 {
     (void)hcan;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_Stop not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_Stop not implemented by platform");
     return HAL_OK;
 }
 
@@ -115,7 +114,7 @@ __weak HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CAN_TxHea
     (void)pHeader;
     (void)aData;
     (void)pTxMailbox;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_AddTxMessage not implemented by platform - VESC command not transmitted\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_AddTxMessage not implemented by platform - VESC command not transmitted");
     return HAL_OK;
 }
 
@@ -128,7 +127,7 @@ __weak HAL_StatusTypeDef HAL_CAN_GetRxMessage(CAN_HandleTypeDef *hcan, uint32_t 
     (void)RxFifo;
     (void)pHeader;
     (void)aData;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetRxMessage not implemented by platform - no VESC status received\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_GetRxMessage not implemented by platform - no VESC status received");
     return HAL_ERROR;
 }
 
@@ -139,7 +138,7 @@ __weak uint32_t HAL_CAN_GetRxFifoFillLevel(CAN_HandleTypeDef *hcan, uint32_t RxF
 {
     (void)hcan;
     (void)RxFifo;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetRxFifoFillLevel not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_GetRxFifoFillLevel not implemented by platform");
     return 0;
 }
 
@@ -150,7 +149,7 @@ __weak HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, void *sFi
 {
     (void)hcan;
     (void)sFilterConfig;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_ConfigFilter not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_ConfigFilter not implemented by platform");
     return HAL_OK;
 }
 
@@ -160,7 +159,7 @@ __weak HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, void *sFi
 __weak HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef *hcan)
 {
     (void)hcan;
-    SEGGER_RTT_printf(0, "WARNING: HAL_CAN_GetState not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_CAN_GetState not implemented by platform");
     return HAL_CAN_STATE_READY;
 }
 
@@ -169,7 +168,7 @@ __weak HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef *hcan)
  */
 __weak void MX_CAN1_Init(void)
 {
-    SEGGER_RTT_printf(0, "WARNING: MX_CAN1_Init not implemented by platform - VESC CAN communication not available\n\r");
+    DEBUG_LOG("WARNING: MX_CAN1_Init not implemented by platform - VESC CAN communication not available");
 }
 
 /**
@@ -180,7 +179,7 @@ __weak HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t
     (void)huart;
     (void)pData;
     (void)Size;
-    SEGGER_RTT_printf(0, "WARNING: HAL_UART_Transmit_IT not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_UART_Transmit_IT not implemented by platform");
     return HAL_OK;
 }
 
@@ -192,7 +191,7 @@ __weak HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t 
     (void)huart;
     (void)pData;
     (void)Size;
-    SEGGER_RTT_printf(0, "WARNING: HAL_UART_Receive_IT not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_UART_Receive_IT not implemented by platform");
     return HAL_OK;
 }
 
@@ -202,7 +201,7 @@ __weak HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t 
 __weak HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart)
 {
     (void)huart;
-    SEGGER_RTT_printf(0, "WARNING: HAL_UART_GetState not implemented by platform\n\r");
+    DEBUG_LOG("WARNING: HAL_UART_GetState not implemented by platform");
     return HAL_UART_STATE_READY;
 }
 
@@ -216,7 +215,7 @@ __weak HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart)
 __weak void vTaskDelete(TaskHandle_t xTaskToDelete)
 {
     (void)xTaskToDelete;
-    SEGGER_RTT_printf(0, "WARNING: vTaskDelete not implemented by platform - cannot delete task\n\r");
+    DEBUG_LOG("WARNING: vTaskDelete not implemented by platform - cannot delete task");
     // Cannot actually delete task without FreeRTOS
 }
 
@@ -226,7 +225,7 @@ __weak void vTaskDelete(TaskHandle_t xTaskToDelete)
 __weak void vTaskDelay(const TickType_t xTicksToDelay)
 {
     (void)xTicksToDelay;
-    SEGGER_RTT_printf(0, "WARNING: vTaskDelay not implemented by platform - no delay applied\n\r");
+    DEBUG_LOG("WARNING: vTaskDelay not implemented by platform - no delay applied");
     // No delay in hollow implementation
 }
 
@@ -237,7 +236,7 @@ __weak QueueHandle_t xQueueCreate(UBaseType_t uxQueueLength, UBaseType_t uxItemS
 {
     (void)uxQueueLength;
     (void)uxItemSize;
-    SEGGER_RTT_printf(0, "WARNING: xQueueCreate not implemented by platform - returning null queue\n\r");
+    DEBUG_LOG("WARNING: xQueueCreate not implemented by platform - returning null queue");
     return nullptr;
 }
 
@@ -249,7 +248,7 @@ __weak BaseType_t xQueueSend(QueueHandle_t xQueue, const void *pvItemToQueue, Ti
     (void)xQueue;
     (void)pvItemToQueue;
     (void)xTicksToWait;
-    SEGGER_RTT_printf(0, "WARNING: xQueueSend not implemented by platform - message lost\n\r");
+    DEBUG_LOG("WARNING: xQueueSend not implemented by platform - message lost");
     return pdFAIL;
 }
 
@@ -261,7 +260,7 @@ __weak BaseType_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t
     (void)xQueue;
     (void)pvBuffer;
     (void)xTicksToWait;
-    SEGGER_RTT_printf(0, "WARNING: xQueueReceive not implemented by platform - no data received\n\r");
+    DEBUG_LOG("WARNING: xQueueReceive not implemented by platform - no data received");
     return pdFAIL;
 }
 
@@ -270,7 +269,7 @@ __weak BaseType_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t
  */
 __weak TickType_t xTaskGetTickCount(void)
 {
-    SEGGER_RTT_printf(0, "WARNING: xTaskGetTickCount not implemented by platform - returning 0\n\r");
+    DEBUG_LOG("WARNING: xTaskGetTickCount not implemented by platform - returning 0");
     return 0;
 }
 

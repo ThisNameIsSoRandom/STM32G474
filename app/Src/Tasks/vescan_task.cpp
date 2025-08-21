@@ -8,7 +8,6 @@
 #include "vescan_task.h"
 #include "hal_types.h"
 #include "freertos_types.h"
-#include "SEGGER_RTT.h"
 #include "VESC.h"
 
 // Platform detection for CAN vs FDCAN
@@ -129,13 +128,13 @@ void vescanInitQueues(void)
     // Create data queue for battery telemetry
     vescanDataQueue = xQueueCreate(VESCAN_DATA_QUEUE_LENGTH, sizeof(BatteryTelemetryData));
     if (vescanDataQueue == nullptr) {
-        SEGGER_RTT_printf(0, "VESCAN: Failed to create data queue\n\r");
+        DEBUG_LOG("VESCAN: Failed to create data queue\n\r");
     }
     
     // Create control queue for commands
     vescanControlQueue = xQueueCreate(VESCAN_CONTROL_QUEUE_LENGTH, sizeof(VescanControlMessage));
     if (vescanControlQueue == nullptr) {
-        SEGGER_RTT_printf(0, "VESCAN: Failed to create control queue\n\r");
+        DEBUG_LOG("VESCAN: Failed to create control queue\n\r");
     }
 }
 
@@ -174,7 +173,7 @@ BaseType_t vescanSendCommand(VescanCommand cmd, uint32_t param)
  */
 static void sendDataLayout(void)
 {
-    SEGGER_RTT_printf(0, "VESCAN: Sending data layout descriptor\n\r");
+    DEBUG_LOG("VESCAN: Sending data layout descriptor\n\r");
     
     // Create layout descriptor
     DataLayoutDescriptor layout = {
@@ -208,7 +207,7 @@ static void sendDataLayout(void)
         uint32_t frameId = (VESCAN_CAN_ID_BASE | 0x01) + (offset / 8);
         
         if (platformCanSend(frameId, frameData, bytesToCopy) != HAL_OK) {
-            SEGGER_RTT_printf(0, "VESCAN: Failed to send layout frame %d\n\r", offset / 8);
+            DEBUG_LOG("VESCAN: Failed to send layout frame %d\n\r", offset / 8);
         }
         
         vTaskDelay(10);  // Small delay between frames
@@ -236,7 +235,7 @@ static void transmitBatteryData(const BatteryTelemetryData *data)
     
     // Convert to raw CAN frame
     if (!VESC_convertStatus8ToRaw(&rawFrame, &status8)) {
-        SEGGER_RTT_printf(0, "VESCAN: Failed to convert data to VESC format\n\r");
+        DEBUG_LOG("VESCAN: Failed to convert data to VESC format\n\r");
         return;
     }
     
@@ -248,14 +247,14 @@ static void transmitBatteryData(const BatteryTelemetryData *data)
         
         // Log every 10th packet to reduce RTT spam
         if (vescan_state.packet_counter % 10 == 0) {
-            SEGGER_RTT_printf(0, "VESCAN: Transmitted packet %d (V:%dmV, I:%dmA, SOC:%d%%)\n\r",
+            DEBUG_LOG("VESCAN: Transmitted packet %d (V:%dmV, I:%dmA, SOC:%d%%)\n\r",
                 vescan_state.packet_counter,
                 data->voltage_mv,
                 data->current_ma,
                 data->soc_percent);
         }
     } else {
-        SEGGER_RTT_printf(0, "VESCAN: CAN transmission failed\n\r");
+        DEBUG_LOG("VESCAN: CAN transmission failed\n\r");
     }
 }
 
@@ -267,19 +266,19 @@ static void processControlCommand(const VescanControlMessage *cmd)
 {
     switch (cmd->command) {
         case VESCAN_CMD_ENABLE_LOGGING:
-            SEGGER_RTT_printf(0, "VESCAN: Logging enabled\n\r");
+            DEBUG_LOG("VESCAN: Logging enabled\n\r");
             vescan_state.logging_enabled = true;
             vescan_state.layout_sent = false;  // Send layout on next cycle
             break;
             
         case VESCAN_CMD_DISABLE_LOGGING:
-            SEGGER_RTT_printf(0, "VESCAN: Logging disabled\n\r");
+            DEBUG_LOG("VESCAN: Logging disabled\n\r");
             vescan_state.logging_enabled = false;
             break;
             
         case VESCAN_CMD_SET_INTERVAL:
             vescan_state.transmission_interval_ms = cmd->parameter;
-            SEGGER_RTT_printf(0, "VESCAN: Interval set to %d ms\n\r", cmd->parameter);
+            DEBUG_LOG("VESCAN: Interval set to %d ms\n\r", cmd->parameter);
             break;
             
         case VESCAN_CMD_SEND_LAYOUT:
@@ -287,7 +286,7 @@ static void processControlCommand(const VescanControlMessage *cmd)
             break;
             
         default:
-            SEGGER_RTT_printf(0, "VESCAN: Unknown command %d\n\r", cmd->command);
+            DEBUG_LOG("VESCAN: Unknown command %d\n\r", cmd->command);
             break;
     }
 }
@@ -299,19 +298,19 @@ void vescanTask(void *pvParameters)
 {
     (void)pvParameters;
     
-    SEGGER_RTT_printf(0, "VESCAN: Task started\n\r");
+    DEBUG_LOG("VESCAN: Task started\n\r");
     
     // Initialize and start platform-specific CAN peripheral
 #if PLATFORM_USES_FDCAN
     // FDCAN is already initialized by MX_FDCAN1_Init() in main
     if (initPlatformCan() != HAL_OK) {
-        SEGGER_RTT_printf(0, "VESCAN: Failed to start FDCAN\n\r");
+        DEBUG_LOG("VESCAN: Failed to start FDCAN\n\r");
     }
 #else
     // Initialize classic CAN
     MX_CAN1_Init();
     if (initPlatformCan() != HAL_OK) {
-        SEGGER_RTT_printf(0, "VESCAN: Failed to start CAN\n\r");
+        DEBUG_LOG("VESCAN: Failed to start CAN\n\r");
     }
 #endif
     

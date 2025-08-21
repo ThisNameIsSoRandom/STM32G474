@@ -107,6 +107,7 @@ target_include_directories(BQ40Z80
         ${CMAKE_CURRENT_SOURCE_DIR}/Inc
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../../Inc  # app/Inc directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Tasks/Inc  # For hal_types.h with DEBUG_LOG macro
 )
 
 # Link with parent app includes for HAL types

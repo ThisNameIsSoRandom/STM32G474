@@ -8,14 +8,14 @@ cmake_minimum_required(VERSION 3.16)
 OVERVIEW:
 This is the shared application library for the STM32G474 multi-board project.
 It provides board-agnostic application code that can be linked into any of the
-supported STM32 board targets (G474, H755, U575, L476).
+supported STM32 board targets (custom-G474, nucleo-U575ZI-Q).
 
 PURPOSE:
 - Shared application logic across multiple STM32 board implementations
 - Battery management system (BQ40Z80) driver and communication
 - Real-time task management and scheduling
+- VESCAN motor controller CAN communication
 - Logging and debugging utilities via SEGGER RTT
-- Unit testing framework for embedded components
 
 ARCHITECTURE:
 The app library is organized into modular components:
@@ -28,12 +28,10 @@ The app library is organized into modular components:
 │   ├── VESCCan/           # VESC motor controller CAN communication
 │   ├── logging.cpp        # Logging infrastructure
 │   └── placeholder.cpp    # Template implementation
-└── tests/                 # Unit tests (when ENABLE_UNIT_TESTS=ON)
 
 BUILD MODES:
 1. Standalone Build: Uses system compiler for library development/testing
 2. Cross-Compilation: Uses ARM GCC when included by board projects
-3. Unit Testing: Includes Google Test framework for component testing
 
 LIBRARY FEATURES:
 - Static library target for linking into board executables
@@ -46,17 +44,12 @@ DEPENDENCIES:
 - SEGGER RTT (for logging and debug output)
 - FreeRTOS (task management - provided by board projects)
 - VESCCan (VESC motor controller CAN communication)
-- Google Test (unit testing - optional)
 
 INTEGRATION:
 Each board project includes this library via add_subdirectory() and links
 against the 'app' target. The library adapts to the board's toolchain and
 provides consistent application functionality across all platforms.
 
-TESTING:
-Unit tests can be enabled with ENABLE_UNIT_TESTS=ON. Tests use Google Test
-framework and provide mock implementations for HAL functions to enable
-testing without hardware dependencies.
 
 USAGE:
 - Include in board project: add_subdirectory(../../app ${CMAKE_BINARY_DIR}/app)
@@ -114,10 +107,6 @@ add_subdirectory(Src/Tasks)
 add_subdirectory(Src/BQ40Z80)
 add_subdirectory(Src/VESCCan)
 
-# Add tests subdirectory if unit tests are enabled
-if(ENABLE_UNIT_TESTS)
-    add_subdirectory(tests)
-endif()
 
 # Link with subdirectory libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC
@@ -127,8 +116,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     VESCCan
 )
 
-# Note: app_tests library will be linked at the executable level, not here
-# This avoids circular dependencies
 
 # Inherit compile options from parent project
 target_compile_options(${PROJECT_NAME} PRIVATE

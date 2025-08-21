@@ -30,38 +30,20 @@
 #include "freertos_tasks.h"
 #include "vescan_task.h"
 #include "battery_monitor_task.h"
-
-// Logging method selection - uncomment one:
-// #define USE_SEGGER_RTT_LOGGING    // Use SEGGER RTT for logging
-#define USE_UART_CONSOLE_LOGGING  // Use UART4 console for logging
-
-// Include appropriate headers based on logging method
-#ifdef USE_SEGGER_RTT_LOGGING
-#include "SEGGER_RTT.h"
-#elif defined(USE_UART_CONSOLE_LOGGING)
+#include "hal_types.h"  // For unified DEBUG_LOG macro
 #include <stdio.h>
 #include <string.h>
-#endif
-
-// Define logging macro based on method selection
-#ifdef USE_SEGGER_RTT_LOGGING
-    #define LOG_PRINT(channel, format, ...) SEGGER_RTT_printf(channel, format, ##__VA_ARGS__)
-#elif defined(USE_UART_CONSOLE_LOGGING)
-    #define LOG_PRINT(channel, format, ...) printf(format, ##__VA_ARGS__)
-#else
-    #define LOG_PRINT(channel, format, ...) // No logging
-#endif
 
 // Unit test integration - declare as weak symbols so they can be overridden
 extern "C" __attribute__((weak)) void startUnitTests(void) {
     // Weak implementation - does nothing if tests not linked
-    LOG_PRINT(0, "Unit tests not linked - skipping\n");
+    DEBUG_LOG("Unit tests not linked - skipping");
 }
 
 extern "C" __attribute__((weak)) void runTestsTask(void* pvParameters) {
     (void)pvParameters;
     // Weak implementation - just delete task if tests not linked
-    LOG_PRINT(0, "Test task not implemented - deleting task\n");
+    DEBUG_LOG("Test task not implemented - deleting task");
     vTaskDelete(NULL);  // Use NULL instead of nullptr for C compatibility
 }
 /* USER CODE END Includes */
@@ -154,16 +136,16 @@ int main(void)
   printf("MM                               MM \n\r");
   printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
 
-  LOG_PRINT(0, "\n=== STM32G474 Custom Board Startup ===\n");
-  LOG_PRINT(0, "Platform: Custom-G474\n");
-  LOG_PRINT(0, "MCU: STM32G474RE Cortex-M4F\n");
-  LOG_PRINT(0, "FreeRTOS: Enabled\n");
-  LOG_PRINT(0, "Architecture: SMBus + VESCAN tasks with queues\n");
-  LOG_PRINT(0, "\n--- Creating Application Tasks ---\n");
+  DEBUG_LOG("\n=== STM32G474 Custom Board Startup ===");
+  DEBUG_LOG("Platform: Custom-G474");
+  DEBUG_LOG("MCU: STM32G474RE Cortex-M4F");
+  DEBUG_LOG("FreeRTOS: Enabled");
+  DEBUG_LOG("Architecture: SMBus + VESCAN tasks with queues");
+  DEBUG_LOG("\n--- Creating Application Tasks ---");
 
   /* Initialize VESCAN queues (temporarily disabled for debugging) */
   // vescanInitQueues();
-  LOG_PRINT(0, "VESCAN queues initialization skipped (debugging)\n");
+  DEBUG_LOG("VESCAN queues initialization skipped (debugging)");
 
   /* Configure battery monitor task for STM32G474 platform */
   static BatteryTaskConfig battery_config = {
@@ -185,13 +167,13 @@ int main(void)
   );
   
   if(xReturned != pdPASS) {
-    LOG_PRINT(0, "ERROR: Failed to create battery monitor task\n");
+    DEBUG_LOG("ERROR: Failed to create battery monitor task");
     Error_Handler();
   }
-  LOG_PRINT(0, "Battery monitor task created successfully (I2C3, 3sec reports)\n");
+  DEBUG_LOG("Battery monitor task created successfully (I2C3, 3sec reports)");
 
   /* Create VESCAN task (temporarily disabled for debugging) */
-  LOG_PRINT(0, "VESCAN task creation skipped (debugging - no queues initialized)\n");
+  DEBUG_LOG("VESCAN task creation skipped (debugging - no queues initialized)");
   /*
   TaskHandle_t vescanTaskHandle = NULL;
   xReturned = xTaskCreate(
@@ -204,18 +186,18 @@ int main(void)
   );
   
   if(xReturned != pdPASS) {
-    LOG_PRINT(0, "ERROR: Failed to create VESCAN task\n");
+    DEBUG_LOG("ERROR: Failed to create VESCAN task");
     Error_Handler();
   }
-  LOG_PRINT(0, "VESCAN task created successfully (FDCAN1)\n");
+  DEBUG_LOG("VESCAN task created successfully (FDCAN1)");
   */
 
   /* UART task is currently disabled */
   //TaskHandle_t uartTaskHandle = NULL;
   //xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
   
-  LOG_PRINT(0, "\n--- Starting FreeRTOS Scheduler ---\n");
-  LOG_PRINT(0, "Application ready\n\n");
+  DEBUG_LOG("\n--- Starting FreeRTOS Scheduler ---");
+  DEBUG_LOG("Application ready\n");
 
   /* Start FreeRTOS scheduler */
   vTaskStartScheduler();

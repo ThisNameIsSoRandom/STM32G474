@@ -13,12 +13,6 @@ This project provides a unified foundation for developing embedded applications 
 - **Features**: FPU, up to 170MHz, 512KB Flash, 128KB RAM
 - **Status**: Single-core with FreeRTOS
 
-### STM32H755ZI-Q (nucleo-H755ZI-Q)  
-- **Microcontroller**: STM32H755ZI-Q (Dual-core ARM Cortex-M7 + M4)
-- **CM7**: 480 MHz main core with FreeRTOS
-- **CM4**: 240 MHz secondary core
-- **Features**: Asymmetric dual-core architecture with HSEM synchronization
-- **Debug**: VSCode multicore debugging support
 
 ### STM32U575ZI-Q (nucleo-U575ZI-Q)
 - **Microcontroller**: STM32U575ZI-Q (ARM Cortex-M33)
@@ -36,18 +30,15 @@ STM32G474/
 │   │   ├── RTT/                  # SEGGER RTT submodule
 │   │   ├── Tasks/                # FreeRTOS tasks submodule
 │   │   │   ├── hal_implementations.cpp  # Weak HAL fallbacks
-│   │   │   ├── smbus_task.cpp    # SMBus communication task
-│   │   │   └── uart_task.cpp     # UART communication task
+│   │   │   ├── battery_monitor_task.cpp # Battery management task
+│   │   │   └── vescan_task.cpp    # VESCAN motor controller task
 │   │   ├── logging.cpp           # Application logging
 │   │   └── placeholder.cpp       # App utilities
-│   └── uTests/                   # Unit tests
 ├── boards/                       # Board-specific implementations
 │   ├── custom-G474/              # STM32G474 board
-│   ├── nucleo-H755ZI-Q/          # STM32H755 dual-core board
 │   └── nucleo-U575ZI-Q/          # STM32U575 board
 ├── toolchains/                   # Cross-compilation toolchains
 │   ├── cortex-m4f.cmake          # Cortex-M4F configuration
-│   ├── cortex-m7.cmake           # Cortex-M7 configuration
 │   └── cortex-m33.cmake          # Cortex-M33 configuration
 └── CLAUDE.md                     # Development guidelines
 ```
@@ -60,7 +51,7 @@ STM32G474/
 - **Canonical structure**: Standard Inc/Src layout with submodules
 
 ### Key Components
-- **Tasks**: SMBus and UART communication tasks with HAL abstraction
+- **Tasks**: Battery monitoring and VESCAN motor controller tasks with HAL abstraction
 - **RTT**: SEGGER Real-Time Transfer for debugging output
 - **HAL Abstraction**: Platform-agnostic HAL function declarations
 - **Weak Implementations**: Default HAL behaviors with platform overrides
@@ -81,7 +72,7 @@ Git Bash provides a Unix-like command-line interface on Windows with integrated 
 STM32CubeCLT is STMicroelectronics' complete embedded toolchain including ARM GCC compiler, CMake, Ninja build generator, and OpenOCD debugger. It provides a unified, tested toolchain specifically optimized for STM32 development with consistent versions across Windows, Linux, and macOS. The project is configured to use STM32CubeCLT 1.18.0+ with hardcoded paths for reliable builds.
 
 #### IDE Options: VSCode vs CLion
-**VSCode** offers lightweight, extensible embedded development with excellent C++ IntelliSense and debugging through the cortex-debug extension. It excels at multicore debugging (essential for STM32H755 dual-core) with customizable JSON-based configuration and seamless integration with our Makefile frontend. **CLion** provides a full-featured C++ IDE with advanced refactoring, integrated CMake support, and sophisticated debugging capabilities, though it has limitations with STM32 multicore debugging workflows.
+**VSCode** offers lightweight, extensible embedded development with excellent C++ IntelliSense and debugging through the cortex-debug extension with customizable JSON-based configuration and seamless integration with our Makefile frontend. **CLion** provides a full-featured C++ IDE with advanced refactoring, integrated CMake support, and sophisticated debugging capabilities.
 
 #### OpenOCD (On-Chip Debugger)  
 OpenOCD provides the critical bridge between your development environment and STM32 hardware through ST-Link, J-Link, or custom debug probes. It enables real-time debugging, flash programming, and hardware trace capabilities across all STM32 families. The tool is pre-integrated with STM32CubeCLT and configured for each board's specific debug interface and memory layout.
@@ -173,7 +164,7 @@ The root-level Makefile provides a unified build interface for all projects, eli
 ```bash
 # Pattern: make [debug|release] [project-name]
 make debug nucleo-u575zi-q      # Build STM32U575 board (debug)
-make release nucleo-l476rg      # Build STM32L476 board (release)
+make release nucleo-u575zi-q    # Build STM32U575 board (release)
 make debug app                  # Build shared app library
 make clean nucleo-u575zi-q      # Clean specific project
 make clean-all                  # Clean all projects
@@ -184,9 +175,7 @@ make help                       # Show usage information
 #### Available Projects
 - **app**: Shared application library (platform-agnostic)
 - **nucleo-u575zi-q**: STM32U575ZI-Q Nucleo board
-- **nucleo-l476rg**: STM32L476RG Nucleo board  
 - **custom-g474**: Custom STM32G474 board
-- **nucleo-h755zi-q**: STM32H755ZI-Q dual-core board
 
 #### Build Outputs
 ```bash
@@ -220,7 +209,7 @@ code STM32G474.code-workspace
 # - IntelliSense via compile_commands.json
 # - Problem matcher for build errors
 # - Integrated terminal with make commands
-# - Debugging support (especially for STM32H755 multicore)
+# - Debugging support for STM32 boards
 ```
 
 #### CLion Configuration
@@ -319,9 +308,6 @@ cmake --build cmake-build-debug
 cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DBOARD=custom-G474
 cmake --build cmake-build-debug
 
-# STM32H755ZI-Q dual-core board  
-cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DBOARD=nucleo-H755ZI-Q
-cmake --build cmake-build-debug
 
 # STM32U575ZI-Q board
 cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DBOARD=nucleo-U575ZI-Q
@@ -353,22 +339,6 @@ cmake --build --preset Release
 - **STM32CubeMX compatibility**: Generated code works with C++ compilation
 - **FreeRTOS integration**: C++ tasks with extern "C" linkage
 
-### VSCode Multicore Debugging (STM32H755ZI-Q)
-Complete dual-core debugging workflow with STM32CubeCLT integration:
-
-```bash
-# Quick setup (builds, flashes, starts debug server)
-Ctrl+Shift+P → "Tasks: Run Task" → "Setup Multicore Debug"
-
-# Individual debugging
-F5 → "Debug CM7" or "Debug CM4"
-```
-
-**Features**:
-- Simultaneous CM7 + CM4 debugging
-- FreeRTOS thread awareness on both cores
-- STM32CubeCLT toolchain integration
-- Automatic symbol loading and breakpoints
 
 ### Adding New Boards
 1. Create board directory in `boards/[board-name]/`

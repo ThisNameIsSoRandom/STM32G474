@@ -1,11 +1,24 @@
 #ifndef HAL_TYPES_H
 #define HAL_TYPES_H
 
+#include <stdint.h>
+
+// ===============================
+// Platform-aware Debug Logging
+// ===============================
+#ifdef STM32G474xx
+    // STM32G474 uses UART console via printf
+    #include <stdio.h>
+    #define DEBUG_LOG(format, ...) printf(format "\n", ##__VA_ARGS__)
+#else
+    // Other platforms use SEGGER RTT
+    #include "SEGGER_RTT.h"
+    #define DEBUG_LOG(format, ...) SEGGER_RTT_printf(0, format "\n", ##__VA_ARGS__)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 // ===============================
 // HAL Types - Only define if real HAL not present
@@ -107,6 +120,43 @@ typedef struct
 
 #endif /* HAL_CAN_MODULE_ENABLED */
 
+// FDCAN states and types - Only define if real HAL not present  
+#ifndef HAL_FDCAN_MODULE_ENABLED
+typedef struct FDCAN_HandleTypeDef FDCAN_HandleTypeDef;
+
+typedef struct
+{
+  uint32_t Identifier;              // FDCAN identifier
+  uint32_t IdType;                  // FDCAN identifier type
+  uint32_t TxFrameType;             // FDCAN frame type
+  uint32_t DataLength;              // FDCAN data length
+  uint32_t ErrorStateIndicator;     // FDCAN error state indicator
+  uint32_t BitRateSwitch;           // FDCAN bit rate switch
+  uint32_t FDFormat;                // FDCAN format
+  uint32_t TxEventFifoControl;      // FDCAN Tx event FIFO control
+  uint32_t MessageMarker;           // FDCAN message marker
+} FDCAN_TxHeaderTypeDef;
+
+// FDCAN Constants
+#define FDCAN_STANDARD_ID              ((uint32_t)0x00000000U)
+#define FDCAN_EXTENDED_ID              ((uint32_t)0x00000004U)
+#define FDCAN_DATA_FRAME               ((uint32_t)0x00000000U)
+#define FDCAN_DLC_BYTES_0              ((uint32_t)0x00000000U)
+#define FDCAN_DLC_BYTES_1              ((uint32_t)0x00010000U)
+#define FDCAN_DLC_BYTES_2              ((uint32_t)0x00020000U)
+#define FDCAN_DLC_BYTES_3              ((uint32_t)0x00030000U)
+#define FDCAN_DLC_BYTES_4              ((uint32_t)0x00040000U)
+#define FDCAN_DLC_BYTES_5              ((uint32_t)0x00050000U)
+#define FDCAN_DLC_BYTES_6              ((uint32_t)0x00060000U)
+#define FDCAN_DLC_BYTES_7              ((uint32_t)0x00070000U)
+#define FDCAN_DLC_BYTES_8              ((uint32_t)0x00080000U)
+#define FDCAN_ESI_ACTIVE               ((uint32_t)0x00000000U)
+#define FDCAN_BRS_OFF                  ((uint32_t)0x00000000U)
+#define FDCAN_CLASSIC_CAN              ((uint32_t)0x00000000U)
+#define FDCAN_NO_TX_EVENTS             ((uint32_t)0x00000000U)
+
+#endif /* HAL_FDCAN_MODULE_ENABLED */
+
 // ===============================
 // HAL Function Declarations - Only declare if real HAL not present
 // ===============================
@@ -116,6 +166,7 @@ typedef struct
 extern I2C_HandleTypeDef hi2c2;
 extern UART_HandleTypeDef huart2;
 extern CAN_HandleTypeDef hcan1;
+extern FDCAN_HandleTypeDef hfdcan1;
 
 // HAL functions - platform will provide implementations
 HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
@@ -137,45 +188,10 @@ HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, void *sFilterCon
 HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef *hcan);
 void MX_CAN1_Init(void);
 
-// FDCAN types and functions - platform will provide implementations
-typedef struct FDCAN_HandleTypeDef FDCAN_HandleTypeDef;
-
-typedef struct
-{
-    uint32_t Identifier;
-    uint32_t IdType;
-    uint32_t TxFrameType;
-    uint32_t DataLength;
-    uint32_t ErrorStateIndicator;
-    uint32_t BitRateSwitch;
-    uint32_t FDFormat;
-    uint32_t TxEventFifoControl;
-    uint32_t MessageMarker;
-} FDCAN_TxHeaderTypeDef;
-
-// FDCAN Constants for compatibility
-#define FDCAN_EXTENDED_ID                  0x00000004U
-#define FDCAN_DATA_FRAME                   0x00000000U
-#define FDCAN_ESI_ACTIVE                   0x00000000U
-#define FDCAN_BRS_OFF                      0x00000000U
-#define FDCAN_CLASSIC_CAN                  0x00000000U
-#define FDCAN_NO_TX_EVENTS                 0x00000000U
-
-#define FDCAN_DLC_BYTES_0                  0x00000000U
-#define FDCAN_DLC_BYTES_1                  0x00010000U
-#define FDCAN_DLC_BYTES_2                  0x00020000U
-#define FDCAN_DLC_BYTES_3                  0x00030000U
-#define FDCAN_DLC_BYTES_4                  0x00040000U
-#define FDCAN_DLC_BYTES_5                  0x00050000U
-#define FDCAN_DLC_BYTES_6                  0x00060000U
-#define FDCAN_DLC_BYTES_7                  0x00070000U
-#define FDCAN_DLC_BYTES_8                  0x00080000U
-
-// FDCAN functions - platform will provide implementations
+// FDCAN functions - platform will provide implementations  
 HAL_StatusTypeDef HAL_FDCAN_Start(FDCAN_HandleTypeDef *hfdcan);
 HAL_StatusTypeDef HAL_FDCAN_Stop(FDCAN_HandleTypeDef *hfdcan);
 HAL_StatusTypeDef HAL_FDCAN_AddMessageToTxFifoQ(FDCAN_HandleTypeDef *hfdcan, FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData);
-void MX_FDCAN1_Init(void);
 #endif /* HAL_MODULE_ENABLED */
 
 // FreeRTOS functions - platform will provide implementations

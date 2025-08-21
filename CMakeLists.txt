@@ -18,18 +18,14 @@ PURPOSE:
 
 SUPPORTED BOARDS:
 - STM32G474 (custom-G474): Single-core ARM Cortex-M4F with FreeRTOS
-- STM32H755ZI-Q (nucleo-H755ZI-Q): Dual-core ARM Cortex-M7 + M4 with FreeRTOS
 - STM32U575ZI-Q (nucleo-U575ZI-Q): Single-core ARM Cortex-M33 with FreeRTOS
-- STM32L476RG (nucleo-L476RG): Single-core ARM Cortex-M4F with FreeRTOS
 
 ARCHITECTURE:
 The project uses a multi-level structure:
 ├── app/                    # Shared application library (board-agnostic)
 ├── boards/                 # Board-specific implementations
 │   ├── custom-G474/       # STM32G474 custom board
-│   ├── nucleo-H755ZI-Q/   # STM32H755 dual-core Nucleo board
-│   ├── nucleo-U575ZI-Q/   # STM32U575 Nucleo board
-│   └── nucleo-L476RG/     # STM32L476 Nucleo board
+│   └── nucleo-U575ZI-Q/   # STM32U575 Nucleo board
 ├── toolchains/            # Cross-compilation toolchain definitions
 └── cmake/                 # CMake utilities and IDE generators
 

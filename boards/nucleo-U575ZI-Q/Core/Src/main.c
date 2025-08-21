@@ -32,20 +32,20 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "logging.h"
-#include "SEGGER_RTT.h"
+#include "hal_types.h"  // For unified DEBUG_LOG macro
 #include "freertos_tasks.h"
 #include "i2c.h"
 
 // Unit test integration - declare as weak symbols so they can be overridden
 extern "C" __attribute__((weak)) void startUnitTests(void) {
     // Weak implementation - does nothing if tests not linked
-    SEGGER_RTT_printf(0, "Unit tests not linked - skipping\n");
+    DEBUG_LOG("Unit tests not linked - skipping");
 }
 
 extern "C" __attribute__((weak)) void runTestsTask(void* pvParameters) {
     (void)pvParameters;
     // Weak implementation - just delete task if tests not linked
-    SEGGER_RTT_printf(0, "Test task not implemented - deleting task\n");
+    DEBUG_LOG("Test task not implemented - deleting task");
     vTaskDelete(NULL);  // Use NULL instead of nullptr for C compatibility
 }
 
@@ -124,11 +124,11 @@ int main(void)
   // Initialize logging system
   initLogging();
 
-  SEGGER_RTT_printf(0, "\n=== STM32U575ZI-Q Platform Startup ===\n");
-  SEGGER_RTT_printf(0, "Platform: NUCLEO-U575ZI-Q\n");
-  SEGGER_RTT_printf(0, "MCU: STM32U575ZI Cortex-M33\n");
-  SEGGER_RTT_printf(0, "FreeRTOS: Enabled\n");
-  SEGGER_RTT_printf(0, "\n--- Creating Application Tasks ---\n");
+  DEBUG_LOG("\n=== STM32U575ZI-Q Platform Startup ===");
+  DEBUG_LOG("Platform: NUCLEO-U575ZI-Q");
+  DEBUG_LOG("MCU: STM32U575ZI Cortex-M33");
+  DEBUG_LOG("FreeRTOS: Enabled");
+  DEBUG_LOG("\n--- Creating Application Tasks ---");
 
   /* Configure battery monitor task for STM32U575ZI-Q platform */
   static BatteryTaskConfig battery_config = {
@@ -150,17 +150,17 @@ int main(void)
   );
   
   if(xReturned != pdPASS) {
-    SEGGER_RTT_printf(0, "ERROR: Failed to create battery monitor task\n");
+    DEBUG_LOG("ERROR: Failed to create battery monitor task");
     Error_Handler();
   }
-  SEGGER_RTT_printf(0, "Battery monitor task created successfully (I2C2, 3sec interval)\n");
+  DEBUG_LOG("Battery monitor task created successfully (I2C2, 3sec interval)");
 
   /* UART task is currently disabled */
   //TaskHandle_t uartTaskHandle = NULL;
   //xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
   
-  SEGGER_RTT_printf(0, "\n--- Starting FreeRTOS Scheduler ---\n");
-  SEGGER_RTT_printf(0, "Application ready\n\n");
+  DEBUG_LOG("\n--- Starting FreeRTOS Scheduler ---");
+  DEBUG_LOG("Application ready\n");
 
   /* Start FreeRTOS scheduler */
   vTaskStartScheduler();

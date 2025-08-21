@@ -204,6 +204,66 @@ struct BatteryData {
 };
 
 /**
+ * @struct BatteryTelemetryData
+ * @brief Packed battery telemetry structure for FDCAN transmission
+ * 
+ * This structure provides a compact, aligned representation of essential
+ * battery parameters optimized for CAN bus transmission. The data is packed
+ * to minimize frame size while maintaining proper alignment for embedded
+ * systems access.
+ * 
+ * Key design considerations:
+ * - Total size: 32 bytes (fits in single FDCAN frame with room for headers)
+ * - Strategic padding ensures 4-byte alignment for critical fields
+ * - All values use fixed-width types for platform independence
+ * - Timestamp enables time-series analysis on receiving end
+ * 
+ * @note This structure is transmitted over FDCAN in big-endian format
+ *       for compatibility with VESC CAN protocol standards
+ */
+#pragma pack(1)
+struct BatteryTelemetryData {
+    // Primary electrical measurements (12 bytes, 4-byte aligned)
+    uint32_t timestamp_ms;      // System timestamp for data correlation
+    uint16_t voltage_mV;        // Battery pack voltage in millivolts
+    int16_t current_mA;         // Instantaneous current (+ = charging, - = discharging)
+    uint16_t temperature_01K;   // Temperature in 0.1K units (subtract 273.15 for °C)
+    uint8_t state_of_charge;    // State of charge percentage (0-100%)
+    uint8_t _pad0;              // Alignment padding
+    
+    // Capacity and cycle information (8 bytes, 4-byte aligned)  
+    uint16_t remaining_capacity_mAh;  // Remaining capacity in mAh
+    uint16_t full_charge_capacity_mAh; // Full charge capacity in mAh
+    uint16_t cycle_count;       // Number of charge/discharge cycles
+    uint8_t _pad1[2];           // Alignment padding
+    
+    // Status flags and alarms (12 bytes, 4-byte aligned)
+    struct {
+        uint8_t over_charged_alarm : 1;
+        uint8_t terminate_charge_alarm : 1;
+        uint8_t over_temp_alarm : 1;
+        uint8_t terminate_discharge_alarm : 1;
+        uint8_t remaining_capacity_alarm : 1;
+        uint8_t remaining_time_alarm : 1;
+        uint8_t initialized : 1;
+        uint8_t discharging : 1;
+    } status_flags;
+    
+    struct {
+        uint8_t fully_charged : 1;
+        uint8_t fully_discharged : 1;
+        uint8_t _reserved : 6;    // Reserved for future status flags
+    } status_flags_ext;
+    
+    uint8_t error_code;         // Battery management system error code
+    uint8_t data_quality;       // Data quality indicator (0xFF = all valid)
+    uint8_t _pad2[8];           // Future expansion and final alignment
+    
+    // Total size: 32 bytes
+};
+#pragma pack()
+
+/**
  * @struct Config
  * @brief Driver configuration parameters
  * 
@@ -388,6 +448,26 @@ public:
      * @note Requires SEGGER RTT to be initialized
      */
     void printBatteryReport();
+    
+    /**
+     * @brief Get packed battery telemetry data for FDCAN transmission
+     * @param telemetry Output structure to fill with battery data
+     * @return HAL_OK if successful, HAL_ERROR if communication failed
+     * 
+     * Retrieves all essential battery parameters and packs them into
+     * a compact structure optimized for CAN bus transmission. The data
+     * includes timestamp, electrical measurements, capacity info, and
+     * status flags in a format suitable for libvescan conversion.
+     * 
+     * The returned structure is designed for:
+     * - Minimal bandwidth usage over CAN
+     * - Proper alignment for embedded systems
+     * - Compatibility with VESC protocol standards
+     * 
+     * @note Call this method at regular intervals (e.g., every 3 seconds)
+     *       to maintain real-time battery monitoring via CAN bus
+     */
+    HAL_StatusTypeDef getBatteryTelemetryData(BatteryTelemetryData& telemetry);
     
     /**
      * @brief Convert raw temperature reading to Celsius
