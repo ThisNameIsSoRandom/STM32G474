@@ -24,8 +24,8 @@ namespace BQ40Z80 {
 HAL_StatusTypeDef Driver::readWord(uint8_t cmd, uint16_t& data) {
     uint8_t buffer[2] = {0, 0}; // Initialize buffer to detect if data is actually received
     
-    DEBUG_LOG("BQ40Z80: Reading word from cmd=0x%02X (addr: write=0x%02X, read=0x%02X)\n", 
-                     cmd, writeAddress_, readAddress_);
+//    DEBUG_LOG("BQ40Z80: Reading word from cmd=0x%02X (addr: write=0x%02X, read=0x%02X)\n",
+//                     cmd, writeAddress_, readAddress_);
     
     // Send command using I2C blocking mode
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
@@ -43,7 +43,7 @@ HAL_StatusTypeDef Driver::readWord(uint8_t cmd, uint16_t& data) {
     HAL_Delay_MS(10);
     
     // Debug: Print buffer before read
-    DEBUG_LOG("BQ40Z80: Buffer before read: 0x%02X 0x%02X\n", buffer[0], buffer[1]);
+//    DEBUG_LOG("BQ40Z80: Buffer before read: 0x%02X 0x%02X\n", buffer[0], buffer[1]);
     
     // Read 2 bytes of data from the device using I2C blocking mode
     status = HAL_I2C_Master_Receive(i2c_handle_,
@@ -58,12 +58,12 @@ HAL_StatusTypeDef Driver::readWord(uint8_t cmd, uint16_t& data) {
     }
     
     // Debug: Print buffer after read
-    DEBUG_LOG("BQ40Z80: Buffer after read: 0x%02X 0x%02X\n", buffer[0], buffer[1]);
+//    DEBUG_LOG("BQ40Z80: Buffer after read: 0x%02X 0x%02X\n", buffer[0], buffer[1]);
     
     // Combine the two received bytes into a 16-bit value (little-endian)
     data = static_cast<uint16_t>(buffer[0] | (buffer[1] << 8));  // Low byte in buffer[0], high byte in buffer[1]
     
-    DEBUG_LOG("BQ40Z80: Read word 0x%04X from cmd=0x%02X\n", data, cmd);
+//    DEBUG_LOG("BQ40Z80: Read word 0x%04X from cmd=0x%02X\n", data, cmd);
     
     return HAL_OK;
 }
@@ -76,7 +76,7 @@ HAL_StatusTypeDef Driver::writeWord(uint8_t cmd, uint16_t data) {
     buffer[1] = data & 0xFF;         // Low byte
     buffer[2] = (data >> 8) & 0xFF;  // High byte
     
-    DEBUG_LOG("BQ40Z80: Writing word 0x%04X to cmd=0x%02X\n", data, cmd);
+//    DEBUG_LOG("BQ40Z80: Writing word 0x%04X to cmd=0x%02X\n", data, cmd);
     
     // Single transmission with command and data using I2C blocking mode
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
@@ -96,7 +96,7 @@ HAL_StatusTypeDef Driver::writeWord(uint8_t cmd, uint16_t data) {
 HAL_StatusTypeDef Driver::readBlock(uint8_t cmd, std::vector<uint8_t>& data) {
     uint8_t buffer[33]; // Max 32 data bytes + 1 length byte for SMBus block read
     
-    DEBUG_LOG("BQ40Z80: Reading block from cmd=0x%02X\n", cmd);
+//    DEBUG_LOG("BQ40Z80: Reading block from cmd=0x%02X\n", cmd);
     
     // First, send the command to indicate which block to read using I2C blocking mode
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
@@ -137,7 +137,7 @@ HAL_StatusTypeDef Driver::readBlock(uint8_t cmd, std::vector<uint8_t>& data) {
         std::memcpy(data.data(), &buffer[1], length);
     }
     
-    DEBUG_LOG("BQ40Z80: Read %d bytes from block\n", length);
+//    DEBUG_LOG("BQ40Z80: Read %d bytes from block\n", length);
     
     return HAL_OK;
 }
@@ -159,10 +159,10 @@ HAL_StatusTypeDef Driver::writeBlock(uint8_t cmd, const std::vector<uint8_t>& da
     
     uint8_t totalLength = static_cast<uint8_t>(2 + data.size());
     
-    DEBUG_LOG("BQ40Z80: Writing block cmd=0x%02X, len=%d, total=%d\n", cmd, data.size(), totalLength);
+//    DEBUG_LOG("BQ40Z80: Writing block cmd=0x%02X, len=%d, total=%d\n", cmd, data.size(), totalLength);
     
     // Use I2C blocking mode for reliable transmission
-    DEBUG_LOG("BQ40Z80: Using I2C blocking mode for block write\n");
+//    DEBUG_LOG("BQ40Z80: Using I2C blocking mode for block write\n");
     
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
@@ -191,7 +191,7 @@ HAL_StatusTypeDef Driver::manufacturerCommand(uint16_t command) {
     buffer[1] = 0x00;                    // High byte first (always 0x00 for our commands)  
     buffer[2] = command & 0xFF;          // Low byte second
     
-    DEBUG_LOG("BQ40Z80: Sending MAC command 0x%04X to ManufacturerAccess (big-endian)", command);
+//    DEBUG_LOG("BQ40Z80: Sending MAC command 0x%04X to ManufacturerAccess (big-endian)", command);
     
     HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(i2c_handle_, 
                                                        writeAddress_, 
@@ -208,7 +208,7 @@ HAL_StatusTypeDef Driver::manufacturerCommand(uint16_t command) {
 
 // New ManufacturerBlockAccess method - use this instead of broken ManufacturerData 
 HAL_StatusTypeDef Driver::manufacturerBlockAccessRead(uint16_t command, uint16_t& data) {
-    DEBUG_LOG("BQ40Z80: Using ManufacturerBlockAccess method for command 0x%04X\n", command);
+//    DEBUG_LOG("BQ40Z80: Using ManufacturerBlockAccess method for command 0x%04X\n", command);
     
     // Step 1: Send MAC command via ManufacturerBlockAccess (0x44)
     HAL_StatusTypeDef status = manufacturerBlockWrite(command);
@@ -218,7 +218,7 @@ HAL_StatusTypeDef Driver::manufacturerBlockAccessRead(uint16_t command, uint16_t
     }
     
     // Step 2: Wait for BQ40Z80 to process the MAC command
-    DEBUG_LOG("BQ40Z80: Waiting for MAC command processing...\n");
+//    DEBUG_LOG("BQ40Z80: Waiting for MAC command processing...\n");
     HAL_Delay_MS(100); // Give BQ40Z80 time to process MAC command
     
     // Step 3: Read response via ManufacturerBlockAccess (0x44) 
@@ -231,8 +231,8 @@ HAL_StatusTypeDef Driver::manufacturerBlockAccessRead(uint16_t command, uint16_t
         if (echo_command == command) {
             // Extract result data (bytes 2-3 in little-endian format)
             data = response[2] | (response[3] << 8);
-            DEBUG_LOG("BQ40Z80: ManufacturerBlockAccess success - command 0x%04X = 0x%04X\n", 
-                             command, data);
+//            DEBUG_LOG("BQ40Z80: ManufacturerBlockAccess success - command 0x%04X = 0x%04X\n",
+//                             command, data);
             return HAL_OK;
         } else {
             DEBUG_LOG("BQ40Z80: MAC command mismatch - sent 0x%04X, got echo 0x%04X\n", 
@@ -248,7 +248,7 @@ HAL_StatusTypeDef Driver::manufacturerBlockAccessRead(uint16_t command, uint16_t
 
 HAL_StatusTypeDef Driver::manufacturerRead(uint16_t command, uint16_t& data) {
     // CRITICAL DEBUG: Check what's in ManufacturerData BEFORE sending command
-    DEBUG_LOG("BQ40Z80: Reading ManufacturerData BEFORE sending command 0x%04X\n", command);
+//    DEBUG_LOG("BQ40Z80: Reading ManufacturerData BEFORE sending command 0x%04X\n", command);
     std::vector<uint8_t> preCmdData;
     if (readBlock(0x23, preCmdData) == HAL_OK && preCmdData.size() >= 2) {
         uint16_t preData = preCmdData[0] | (preCmdData[1] << 8);
@@ -256,7 +256,7 @@ HAL_StatusTypeDef Driver::manufacturerRead(uint16_t command, uint16_t& data) {
     }
     
     // Try different approaches to clear the register  
-    DEBUG_LOG("BQ40Z80: Attempting to clear ManufacturerData register\n");
+//    DEBUG_LOG("BQ40Z80: Attempting to clear ManufacturerData register\n");
     
     // Method 1: Send 0x0000 command
     manufacturerCommand(0x0000);
@@ -270,7 +270,7 @@ HAL_StatusTypeDef Driver::manufacturerRead(uint16_t command, uint16_t& data) {
     }
     
     // Send manufacturer command to ManufacturerAccess (0x00)
-    DEBUG_LOG("BQ40Z80: Sending MAC command 0x%04X\n", command);
+//    DEBUG_LOG("BQ40Z80: Sending MAC command 0x%04X\n", command);
     HAL_StatusTypeDef status = manufacturerCommand(command);
     if (status != HAL_OK) {
         DEBUG_LOG("BQ40Z80: Failed to send manufacturer command 0x%04X\n", command);
@@ -299,7 +299,7 @@ HAL_StatusTypeDef Driver::manufacturerRead(uint16_t command, uint16_t& data) {
             break;
     }
     
-    DEBUG_LOG("BQ40Z80: Waiting %dms for MAC command 0x%04X processing\n", processingDelay, command);
+//    DEBUG_LOG("BQ40Z80: Waiting %dms for MAC command 0x%04X processing\n", processingDelay, command);
     HAL_Delay_MS(processingDelay);
     
     // Try reading multiple times if data doesn't change
@@ -313,11 +313,11 @@ HAL_StatusTypeDef Driver::manufacturerRead(uint16_t command, uint16_t& data) {
         
         if (status == HAL_OK && blockData.size() >= 2) {
             // Debug: Print raw block data to understand what we're getting
-            DEBUG_LOG("BQ40Z80: Raw block data (%d bytes): ", blockData.size());
+//            DEBUG_LOG("BQ40Z80: Raw block data (%d bytes): ", blockData.size());
             for (size_t j = 0; j < blockData.size() && j < 16; j++) {
-                DEBUG_LOG("0x%02X ", blockData[j]);
+//                DEBUG_LOG("0x%02X ", blockData[j]);
             }
-            DEBUG_LOG("");
+//            DEBUG_LOG("");
             
             // Check if this looks like ASCII data (common for some BQ40Z80 responses)
             bool isAscii = true;

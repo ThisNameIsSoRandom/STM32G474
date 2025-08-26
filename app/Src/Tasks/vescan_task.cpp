@@ -226,7 +226,7 @@ static void transmitBatteryData(const BatteryTelemetryData *data)
     VESC_RawFrame rawFrame;
     
     // Map battery data to VESC Status 8 fields (creative mapping)
-    status8.vescID = 0x10;  // Device ID
+    status8.vescID = 0x11;  // Device ID
     status8.weightA = (float)data->voltage_mv / 10.0f;  // Voltage in 0.01V units
     status8.distance = (float)data->current_ma / 10.0f;  // Current in 0.01A units
     status8.humidity = (float)data->soc_percent * 2.0f;  // SOC scaled to float range
@@ -294,7 +294,7 @@ static void processControlCommand(const VescanControlMessage *cmd)
 /**
  * @brief VESC CAN task main function
  */
-void vescanTask(void *pvParameters)
+extern "C" void vescanTask(void *pvParameters)
 {
     (void)pvParameters;
     
@@ -314,6 +314,7 @@ void vescanTask(void *pvParameters)
     }
 #endif
     
+
     // Configure CAN filter to accept all messages (for testing)
     // In production, configure specific filters for command reception
     

@@ -107,7 +107,9 @@ CAN HARDWARE REQUIREMENTS:
 add_library(VESCCan STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/VESC_Convert.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/VESC_Endian.c
+ 	${CMAKE_CURRENT_SOURCE_DIR}/Src/vesc2halcan.c
 )
+
 
 # Set include directories as PUBLIC so they propagate to consumers
 target_include_directories(VESCCan PUBLIC

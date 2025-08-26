@@ -7,10 +7,6 @@
         {
             "name": "custom-G474",
             "path": "./boards/custom-G474"
-        },
-        {
-            "name": "nucleo-U575ZI-Q",
-            "path": "./boards/nucleo-U575ZI-Q"
         }
     ],
     "settings": {
@@ -48,8 +44,7 @@
                 },
                 "dependsOn": [
                     "app: Build app",
-                    "custom-G474: Build STM32G474",
-                    "nucleo-U575ZI-Q: Build nucleo-U575ZI-Q"
+                    "custom-G474: Build STM32G474"
                 ],
                 "dependsOrder": "parallel",
                 "presentation": {
@@ -109,29 +104,6 @@
                 }
             },
             {
-                "label": "nucleo-U575ZI-Q: Build nucleo-U575ZI-Q",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-U575ZI-Q/cmake-build-debug",
-                    "--target", "nucleo-U575ZI-Q",
-                    "-j", "10"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": ["$gcc"],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-U575ZI-Q"
-                }
-            },
-            {
                 "label": "Configure All Projects",
                 "type": "shell",
                 "command": "echo",
@@ -139,8 +111,7 @@
                 "group": "build",
                 "dependsOn": [
                     "app: Configure CMake",
-                    "custom-G474: Configure CMake",
-                    "nucleo-U575ZI-Q: Configure CMake"
+                    "custom-G474: Configure CMake"
                 ],
                 "dependsOrder": "parallel",
                 "presentation": {
@@ -205,33 +176,6 @@
                 }
             },
             {
-                "label": "nucleo-U575ZI-Q: Configure CMake",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "-B", "${workspaceFolder}/boards/nucleo-U575ZI-Q/cmake-build-debug",
-                    "-G", "Ninja",
-                    "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DCMAKE_MAKE_PROGRAM=C:/ST/STM32CubeCLT_1.18.0/Ninja/bin/ninja.exe",
-                    "-DCMAKE_C_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
-                    "-DCMAKE_CXX_COMPILER=C:/ST/STM32CubeCLT_1.18.0/GNU-tools-for-STM32/bin/arm-none-eabi-g++.exe",
-                    "-DBOARD=nucleo-U575ZI-Q"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-U575ZI-Q"
-                }
-            },
-            {
                 "label": "Clean All Projects",
                 "type": "shell",
                 "command": "echo",
@@ -239,8 +183,7 @@
                 "group": "build",
                 "dependsOn": [
                     "app: Clean Build",
-                    "custom-G474: Clean Build",
-                    "nucleo-U575ZI-Q: Clean Build"
+                    "custom-G474: Clean Build"
                 ],
                 "dependsOrder": "parallel",
                 "presentation": {
@@ -295,28 +238,6 @@
                 "problemMatcher": [],
                 "options": {
                     "cwd": "${workspaceFolder}/boards/custom-G474"
-                }
-            },
-            {
-                "label": "nucleo-U575ZI-Q: Clean Build",
-                "type": "shell",
-                "command": "C:/ST/STM32CubeCLT_1.18.0/CMake/bin/cmake.exe",
-                "args": [
-                    "--build", "${workspaceFolder}/boards/nucleo-U575ZI-Q/cmake-build-debug",
-                    "--target", "clean"
-                ],
-                "group": "individual-build",
-                "presentation": {
-                    "echo": true,
-                    "reveal": "always",
-                    "focus": false,
-                    "panel": "shared",
-                    "showReuseMessage": false,
-                    "clear": false
-                },
-                "problemMatcher": [],
-                "options": {
-                    "cwd": "${workspaceFolder}/boards/nucleo-U575ZI-Q"
                 }
             }
         ]

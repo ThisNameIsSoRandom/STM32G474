@@ -30,6 +30,7 @@
 #include "hal_types.h"
 #include "freertos_types.h"
 #include "BQ40Z80/bq40z80.h"
+#include "vesc2halcan.h"
 
 // FDCAN and VESCAN support (only for STM32G474 with FDCAN)
 #ifdef STM32G474xx
@@ -53,33 +54,26 @@
  */
 static HAL_StatusTypeDef transmitBatteryTelemetryFDCAN(const BQ40Z80::BatteryTelemetryData& telemetry) {
     // Create VESC Status_1 frame for primary electrical data
-    VESC_Status_1 status1;
-    status1.vescID = BATTERY_TELEMETRY_VESC_ID;
-    status1.erpm = 0.0f;  // Not applicable for battery
-    status1.current = (float)telemetry.current_mA / 1000.0f;  // Convert mA to A
-    status1.dutyCycle = (float)telemetry.state_of_charge / 100.0f;  // SoC as duty cycle percentage
+	_VESC_Status_9 status9;
+	status9.vescID = BATTERY_TELEMETRY_VESC_ID;
+	status9.potassium = 0.0f;  // Not applicable for battery
+	status9.nitrogen = (float)telemetry.current_mA / 1000.0f;  // Convert mA to A
+	status9.phosphorus = (float)telemetry.state_of_charge / 100.0f;  // SoC as duty cycle percentage
     
     // Convert to raw VESC frame
     VESC_RawFrame rawFrame;
-    if (!VESC_convertStatus1ToRaw(&rawFrame, &status1)) {
+    if (!VESC_convertStatus9ToRaw(&rawFrame, &status9)) {
         DEBUG_LOG("Battery FDCAN: Failed to convert Status1 to raw frame");
         return HAL_ERROR;
     }
     
     // Prepare FDCAN message header
     FDCAN_TxHeaderTypeDef txHeader;
-    txHeader.Identifier = rawFrame.vescID;  // Use VESC ID from raw frame
-    txHeader.IdType = FDCAN_STANDARD_ID;
-    txHeader.TxFrameType = FDCAN_DATA_FRAME;
-    txHeader.DataLength = FDCAN_DLC_BYTES_8;  // Standard CAN frame size
-    txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-    txHeader.BitRateSwitch = FDCAN_BRS_OFF;
-    txHeader.FDFormat = FDCAN_CLASSIC_CAN;
-    txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-    txHeader.MessageMarker = 0;
-    
+    uint8_t txData[8];
+
+    vesc2halcan(&txHeader, txData, rawFrame.can_dlc, &rawFrame);
     // Transmit the frame
-    HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, rawFrame.rawData);
+    HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, txData);
     if (status != HAL_OK) {
         DEBUG_LOG("Battery FDCAN: Transmission failed (status=%d)", status);
         return status;
@@ -153,6 +147,7 @@ extern "C" void batteryMonitorTask(void *pvParameters) {
         
         if (telemetry_status == HAL_OK) {
             // Generate comprehensive battery report for debugging
+        	DEBUG_LOG("%s", task_name);
             battery.printBatteryReport();
             
             // Transmit telemetry data via FDCAN (STM32G474 only)

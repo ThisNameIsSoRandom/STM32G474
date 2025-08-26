@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -36,15 +36,15 @@
 
 // Unit test integration - declare as weak symbols so they can be overridden
 extern "C" __attribute__((weak)) void startUnitTests(void) {
-    // Weak implementation - does nothing if tests not linked
-    DEBUG_LOG("Unit tests not linked - skipping");
+	// Weak implementation - does nothing if tests not linked
+	DEBUG_LOG("Unit tests not linked - skipping");
 }
 
 extern "C" __attribute__((weak)) void runTestsTask(void* pvParameters) {
-    (void)pvParameters;
-    // Weak implementation - just delete task if tests not linked
-    DEBUG_LOG("Test task not implemented - deleting task");
-    vTaskDelete(NULL);  // Use NULL instead of nullptr for C compatibility
+	(void)pvParameters;
+	// Weak implementation - just delete task if tests not linked
+	DEBUG_LOG("Test task not implemented - deleting task");
+	vTaskDelete(NULL);// Use NULL instead of nullptr for C compatibility
 }
 /* USER CODE END Includes */
 
@@ -77,7 +77,8 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+TaskHandle_t batteryTaskHandle[3] = { NULL };
+TaskHandle_t vescanTaskHandle = NULL;
 /* USER CODE END 0 */
 
 /**
@@ -115,102 +116,148 @@ int main(void)
   MX_I2C4_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-  // Test UART4 hardware directly first
-  const char* test_msg = "UART4 HAL Test OK\n\r";
-  HAL_UART_Transmit(&huart4, (uint8_t*)test_msg, strlen(test_msg), 1000);
-  
-  // Test UART4 console via printf/syscalls
-  printf("=== UART4 Console Test ===\n\r");
-  printf("Direct printf test successful!\n\r");
-  
-  // Display startup banner via UART console
-  printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
-  printf("MM                               MM \n\r");
-  printf("MM     `7MM\"\"\"YMM   .M\"\"\"bgd     MM\tExisting solutions v 01.08.25\n\r");
-  printf("MM       MM    `7  ,MI    \"Y     MM \n\r");
-  printf("MM       MM   d    `MMb.         MM \n\r");
-  printf("MM       MMmmMM      `YMMNq.     MM \n\r");
-  printf("MM       MM   Y  , .     `MM     MM \n\r");
-  printf("MM       MM     ,M Mb     dM     MM \n\r");
-  printf("MM     .JMMmmmmMMM P\"Ybmmd\"      MM \n\r");
-  printf("MM                               MM \n\r");
-  printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
+	// Test UART4 hardware directly first
+	const char *test_msg = "UART4 HAL Test OK\n\r";
+	HAL_UART_Transmit(&huart4, (uint8_t*) test_msg, strlen(test_msg), 1000);
 
-  DEBUG_LOG("\n=== STM32G474 Custom Board Startup ===");
-  DEBUG_LOG("Platform: Custom-G474");
-  DEBUG_LOG("MCU: STM32G474RE Cortex-M4F");
-  DEBUG_LOG("FreeRTOS: Enabled");
-  DEBUG_LOG("Architecture: SMBus + VESCAN tasks with queues");
-  DEBUG_LOG("\n--- Creating Application Tasks ---");
+	// Test UART4 console via printf/syscalls
+	printf("=== UART4 Console Test ===\n\r");
+	printf("Direct printf test successful!\n\r");
 
-  /* Initialize VESCAN queues (temporarily disabled for debugging) */
-  // vescanInitQueues();
-  DEBUG_LOG("VESCAN queues initialization skipped (debugging)");
+	// Display startup banner via UART console
+	printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
+	printf("MM                               MM \n\r");
+	printf("MM     `7MM\"\"\"YMM   .M\"\"\"bgd     MM\tExisting solutions v 01.08.25\n\r");
+	printf("MM       MM    `7  ,MI    \"Y     MM \n\r");
+	printf("MM       MM   d    `MMb.         MM \n\r");
+	printf("MM       MMmmMM      `YMMNq.     MM \n\r");
+	printf("MM       MM   Y  , .     `MM     MM \n\r");
+	printf("MM       MM     ,M Mb     dM     MM \n\r");
+	printf("MM     .JMMmmmmMMM P\"Ybmmd\"      MM \n\r");
+	printf("MM                               MM \n\r");
+	printf("mmmmm mmmmm mmmmm mmmmm mmmmm mmmmm \n\r");
 
-  /* Configure battery monitor task for STM32G474 platform */
-  static BatteryTaskConfig battery_config = {
-      &hi2c3,                    // Use I2C3 peripheral on this platform
-      BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
-      3000,                      // Read battery every 3 seconds
-      "BatteryG474"              // Platform-specific task name
-  };
+	DEBUG_LOG("\n=== STM32G474 Custom Board Startup ===");
+	DEBUG_LOG("Platform: Custom-G474");
+	DEBUG_LOG("MCU: STM32G474RE Cortex-M4F");
+	DEBUG_LOG("FreeRTOS: Enabled");
+	DEBUG_LOG("Architecture: SMBus + VESCAN tasks with queues");
+	DEBUG_LOG("\n--- Creating Application Tasks ---");
 
-  /* Create battery monitor task for BQ40Z80 management */
-  TaskHandle_t batteryTaskHandle = NULL;
-  BaseType_t xReturned = xTaskCreate(
-      batteryMonitorTask,           // Task function - battery monitoring with reports
-      "Battery",                    // Task name
-      BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
-      &battery_config,              // Pass configuration as parameters
-      BATTERY_MONITOR_TASK_PRIORITY,// Task priority from configuration
-      &batteryTaskHandle            // Task handle
-  );
-  
-  if(xReturned != pdPASS) {
-    DEBUG_LOG("ERROR: Failed to create battery monitor task");
-    Error_Handler();
-  }
-  DEBUG_LOG("Battery monitor task created successfully (I2C3, 3sec reports)");
 
-  /* Create VESCAN task (temporarily disabled for debugging) */
-  DEBUG_LOG("VESCAN task creation skipped (debugging - no queues initialized)");
-  /*
-  TaskHandle_t vescanTaskHandle = NULL;
-  xReturned = xTaskCreate(
-      vescanTask,                   // Task function
-      "VESCAN",                     // Task name
-      512,                          // Stack size
-      NULL,                         // Parameters
-      tskIDLE_PRIORITY + 2,         // Priority
-      &vescanTaskHandle             // Task handle
-  );
-  
-  if(xReturned != pdPASS) {
-    DEBUG_LOG("ERROR: Failed to create VESCAN task");
-    Error_Handler();
-  }
-  DEBUG_LOG("VESCAN task created successfully (FDCAN1)");
-  */
 
-  /* UART task is currently disabled */
-  //TaskHandle_t uartTaskHandle = NULL;
-  //xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
-  
-  DEBUG_LOG("\n--- Starting FreeRTOS Scheduler ---");
-  DEBUG_LOG("Application ready\n");
+    // FDCAN is already initialized by MX_FDCAN1_Init() in main
+	HAL_FDCAN_Start(&hfdcan1);
 
-  /* Start FreeRTOS scheduler */
-  vTaskStartScheduler();
+
+	/* Initialize VESCAN queues (temporarily disabled for debugging) */
+	// vescanInitQueues();
+//	DEBUG_LOG("VESCAN queues initialization skipped (debugging)");
+
+	/* Configure battery monitor task for STM32G474 platform */
+//@formatter:off
+	static BatteryTaskConfig battery_config[3] = {
+	{
+				&hi2c3,                    // Use I2C3 peripheral on this platform
+				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+				3000,                      // Read battery every 3 seconds
+				"BatteryG474 0"              // Platform-specific task name
+	},
+	{
+				&hi2c2,                    // Use I2C3 peripheral on this platform
+				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+				3000,                      // Read battery every 3 seconds
+				"BatteryG474 1"              // Platform-specific task name
+	},
+	{
+				&hi2c4,                    // Use I2C3 peripheral on this platform
+				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+				3000,                      // Read battery every 3 seconds
+				"BatteryG474 2"              // Platform-specific task name
+	},
+
+	};
+
+//@formatter:on
+
+	BaseType_t xReturned;
+	/* Create VESCAN task  */
+//	xReturned = xTaskCreate(vescanTask,                   // Task function
+//			"VESCAN",                     // Task name
+//			512,                          // Stack size
+//			NULL,                         // Parameters
+//			tskIDLE_PRIORITY + 2,         // Priority
+//			&vescanTaskHandle             // Task handle
+//			);
+//
+//	if (xReturned != pdPASS) {
+//		DEBUG_LOG("ERROR: Failed to create VESCAN task");
+//		Error_Handler();
+//	}
+//	DEBUG_LOG("VESCAN task created successfully (FDCAN1)");
+
+	/* Create battery monitor task for BQ40Z80 management */
+
+	xReturned = xTaskCreate(batteryMonitorTask,           // Task function - battery monitoring with reports
+			"Battery0",                    // Task name
+			BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
+			&battery_config[0],              // Pass configuration as parameters
+			BATTERY_MONITOR_TASK_PRIORITY,              // Task priority from configuration
+			&batteryTaskHandle[0]            // Task handle
+			);
+
+	if (xReturned != pdPASS) {
+		DEBUG_LOG("ERROR: Failed to create battery monitor task");
+		Error_Handler();
+	}
+	DEBUG_LOG("Battery monitor task created successfully (I2C3, 3sec reports)");
+
+	xReturned = xTaskCreate(batteryMonitorTask,           // Task function - battery monitoring with reports
+			"Battery1",                    // Task name
+			BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
+			&battery_config[1],              // Pass configuration as parameters
+			BATTERY_MONITOR_TASK_PRIORITY,              // Task priority from configuration
+			&batteryTaskHandle[1]            // Task handle
+			);
+
+	if (xReturned != pdPASS) {
+		DEBUG_LOG("ERROR: Failed to create battery monitor task");
+		Error_Handler();
+	}
+	DEBUG_LOG("Battery monitor task created successfully (I2C3, 3sec reports)");
+
+	xReturned = xTaskCreate(batteryMonitorTask,           // Task function - battery monitoring with reports
+			"Battery2",                    // Task name
+			BATTERY_MONITOR_TASK_STACK_SIZE, // Stack size from configuration
+			&battery_config[2],              // Pass configuration as parameters
+			BATTERY_MONITOR_TASK_PRIORITY,              // Task priority from configuration
+			&batteryTaskHandle[2]            // Task handle
+			);
+
+	if (xReturned != pdPASS) {
+		DEBUG_LOG("ERROR: Failed to create battery monitor task");
+		Error_Handler();
+	}
+	DEBUG_LOG("Battery monitor task created successfully (I2C3, 3sec reports)");
+
+
+	/* UART task is currently disabled */
+	//TaskHandle_t uartTaskHandle = NULL;
+	//xReturned = xTaskCreate(uartTask, "UART", 1024, NULL, tskIDLE_PRIORITY + 1, &uartTaskHandle);
+	DEBUG_LOG("\n--- Starting FreeRTOS Scheduler ---");
+	DEBUG_LOG("Application ready\n");
+
+	/* Start FreeRTOS scheduler */
+	vTaskStartScheduler();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -275,24 +322,20 @@ extern "C" void HAL_Delay_MS(uint32_t ms)
 static StaticTask_t xIdleTaskTCB;
 static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
 
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
-                                   StackType_t **ppxIdleTaskStackBuffer,
-                                   uint32_t *pulIdleTaskStackSize) {
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
-  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
+*ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+*ppxIdleTaskStackBuffer = uxIdleTaskStack;
+*pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
 #if (configUSE_TIMERS == 1)
 static StaticTask_t xTimerTaskTCB;
 static StackType_t uxTimerTaskStack[configTIMER_TASK_STACK_DEPTH];
 
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
-                                    StackType_t **ppxTimerTaskStackBuffer,
-                                    uint32_t *pulTimerTaskStackSize) {
-  *ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
-  *ppxTimerTaskStackBuffer = uxTimerTaskStack;
-  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) {
+*ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
+*ppxTimerTaskStackBuffer = uxTimerTaskStack;
+*pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 #endif
 
@@ -327,11 +370,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+/* User can add his own implementation to report the HAL error return state */
+__disable_irq();
+while (1) {
+}
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
