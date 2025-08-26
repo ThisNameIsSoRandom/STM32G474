@@ -57,8 +57,26 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SPI1_CS_Pin GPIO_PIN_4
-#define SPI1_CS_GPIO_Port GPIOA
+#define RELAY_Pin GPIO_PIN_1
+#define RELAY_GPIO_Port GPIOA
+#define DRIVE_STOP_Pin GPIO_PIN_2
+#define DRIVE_STOP_GPIO_Port GPIOA
+#define LED_CAN_OK_Pin GPIO_PIN_5
+#define LED_CAN_OK_GPIO_Port GPIOA
+#define LED_CAN_ERROR_Pin GPIO_PIN_6
+#define LED_CAN_ERROR_GPIO_Port GPIOA
+#define SMB3C_Pin GPIO_PIN_6
+#define SMB3C_GPIO_Port GPIOC
+#define SMB3D_Pin GPIO_PIN_7
+#define SMB3D_GPIO_Port GPIOC
+#define SMB1C_Pin GPIO_PIN_8
+#define SMB1C_GPIO_Port GPIOC
+#define SMB1D_Pin GPIO_PIN_9
+#define SMB1D_GPIO_Port GPIOC
+#define SMB2D_Pin GPIO_PIN_8
+#define SMB2D_GPIO_Port GPIOA
+#define SMB2C_Pin GPIO_PIN_9
+#define SMB2C_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 

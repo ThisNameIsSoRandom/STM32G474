@@ -183,7 +183,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PA8     ------> I2C2_SDA
     PA9     ------> I2C2_SCL
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Pin = SMB2D_Pin|SMB2C_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -216,7 +216,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PC8     ------> I2C3_SCL
     PC9     ------> I2C3_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Pin = SMB1C_Pin|SMB1D_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -249,7 +249,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+    GPIO_InitStruct.Pin = SMB3C_Pin|SMB3D_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -279,9 +279,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PA8     ------> I2C2_SDA
     PA9     ------> I2C2_SCL
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_8);
+    HAL_GPIO_DeInit(SMB2D_GPIO_Port, SMB2D_Pin);
 
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9);
+    HAL_GPIO_DeInit(SMB2C_GPIO_Port, SMB2C_Pin);
 
   /* USER CODE BEGIN I2C2_MspDeInit 1 */
 
@@ -299,9 +299,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PC8     ------> I2C3_SCL
     PC9     ------> I2C3_SDA
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_8);
+    HAL_GPIO_DeInit(SMB1C_GPIO_Port, SMB1C_Pin);
 
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_9);
+    HAL_GPIO_DeInit(SMB1D_GPIO_Port, SMB1D_Pin);
 
   /* USER CODE BEGIN I2C3_MspDeInit 1 */
 
@@ -319,9 +319,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_6);
+    HAL_GPIO_DeInit(SMB3C_GPIO_Port, SMB3C_Pin);
 
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_7);
+    HAL_GPIO_DeInit(SMB3D_GPIO_Port, SMB3D_Pin);
 
   /* USER CODE BEGIN I2C4_MspDeInit 1 */
 

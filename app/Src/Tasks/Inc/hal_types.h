@@ -187,6 +187,13 @@ typedef struct
 
 } FDCAN_RxHeaderTypeDef;
 
+#define FDCAN_RX_FIFO0    			   ((uint32_t)0x00000040U) /*!< Get received message from Rx FIFO 0    */
+
+#define FDCAN_IE_RF0NE_Pos        		(0U)
+#define FDCAN_IE_RF0NE_Msk        		(0x1UL << FDCAN_IE_RF0NE_Pos)               /*!< 0x00000001 */
+#define FDCAN_IE_RF0NE            		FDCAN_IE_RF0NE_Msk                          /*!<Rx FIFO 0 New Message Enable   */
+#define FDCAN_IT_RX_FIFO0_NEW_MESSAGE  	FDCAN_IE_RF0NE 								/*!< New message written to Rx FIFO 0       */
+
 // FDCAN Constants
 #define FDCAN_STANDARD_ID              ((uint32_t)0x00000000U)
 #define FDCAN_EXTENDED_ID              ((uint32_t)0x00000004U)

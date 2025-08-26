@@ -229,8 +229,8 @@ static void transmitBatteryData(const BatteryTelemetryData *data)
     status8.vescID = 0x11;  // Device ID
     status8.weightA = (float)data->voltage_mv / 10.0f;  // Voltage in 0.01V units
     status8.distance = (float)data->current_ma / 10.0f;  // Current in 0.01A units
-    status8.humidity = (float)data->soc_percent * 2.0f;  // SOC scaled to float range
-    status8.vibrations = (data->soh_percent > 50);  // SOH as boolean vibration level
+//    status8.humidity = (float)data->soc_percent * 2.0f;  // SOC scaled to float range
+//    status8.vibrations = (data->soh_percent > 50);  // SOH as boolean vibration level
     status8.weightB = (float)(data->temp_deciK - 2731) / 10.0f;  // Temp in Celsius
     
     // Convert to raw CAN frame
@@ -363,3 +363,6 @@ extern "C" void vescanTask(void *pvParameters)
 }
 
 } // extern "C"
+
+
+

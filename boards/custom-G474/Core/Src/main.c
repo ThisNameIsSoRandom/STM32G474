@@ -116,6 +116,15 @@ int main(void)
   MX_I2C4_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+
+	HAL_GPIO_WritePin(LED_CAN_ERROR_GPIO_Port, LED_CAN_ERROR_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_CAN_OK_GPIO_Port, LED_CAN_OK_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1000);
+
+	HAL_GPIO_WritePin(LED_CAN_ERROR_GPIO_Port, LED_CAN_ERROR_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED_CAN_OK_GPIO_Port, LED_CAN_OK_Pin, GPIO_PIN_SET);
+	HAL_Delay(1000);
+
 	// Test UART4 hardware directly first
 	const char *test_msg = "UART4 HAL Test OK\n\r";
 	HAL_UART_Transmit(&huart4, (uint8_t*) test_msg, strlen(test_msg), 1000);
@@ -157,25 +166,27 @@ int main(void)
 	/* Configure battery monitor task for STM32G474 platform */
 //@formatter:off
 	static BatteryTaskConfig battery_config[3] = {
-	{
-				&hi2c3,                    // Use I2C3 peripheral on this platform
-				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
-				3000,                      // Read battery every 3 seconds
-				"BatteryG474 0"              // Platform-specific task name
-	},
-	{
-				&hi2c2,                    // Use I2C3 peripheral on this platform
-				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
-				3000,                      // Read battery every 3 seconds
-				"BatteryG474 1"              // Platform-specific task name
-	},
-	{
-				&hi2c4,                    // Use I2C3 peripheral on this platform
-				BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
-				3000,                      // Read battery every 3 seconds
-				"BatteryG474 2"              // Platform-specific task name
-	},
-
+		{
+					&hi2c3,                    // Use I2C3 peripheral on this platform
+					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+					3000,                      // Read battery every 3 seconds
+					"BatteryG474 0",              // Platform-specific task name
+					0x50 						// CAN ID
+		},
+		{
+					&hi2c2,                    // Use I2C3 peripheral on this platform
+					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+					3000,                      // Read battery every 3 seconds
+					"BatteryG474 1",              // Platform-specific task name
+					0x51 						// CAN ID
+		},
+		{
+					&hi2c4,                    // Use I2C3 peripheral on this platform
+					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
+					3000,                      // Read battery every 3 seconds
+					"BatteryG474 2",              // Platform-specific task name
+					0x52 						// CAN ID
+		},
 	};
 
 //@formatter:on

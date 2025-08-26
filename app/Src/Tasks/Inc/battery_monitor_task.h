@@ -3,6 +3,7 @@
 
 #include "hal_types.h"
 #include <stdint.h>
+#include "VESC_Consts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,7 @@ typedef struct {
     uint8_t device_address;             /**< BQ40Z80 I2C device address (typically 0x0B) */
     uint32_t update_interval_ms;        /**< Battery reading update interval in milliseconds */
     const char* task_name;              /**< Task name for debugging and logging */
+    VESC_Id_t canId;
 } BatteryTaskConfig;
 
 /**

@@ -273,4 +273,7 @@ __weak TickType_t xTaskGetTickCount(void)
     return 0;
 }
 
+__weak HAL_StatusTypeDef HAL_FDCAN_GetRxMessage(FDCAN_HandleTypeDef *hfdcan, uint32_t RxLocation,
+                                         FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
+
 }
