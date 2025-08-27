@@ -33,6 +33,7 @@
 #include "hal_types.h"  // For unified DEBUG_LOG macro
 #include <stdio.h>
 #include <string.h>
+#include "vesc2halcan.h"
 
 // Unit test integration - declare as weak symbols so they can be overridden
 extern "C" __attribute__((weak)) void startUnitTests(void) {
@@ -79,6 +80,95 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 TaskHandle_t batteryTaskHandle[3] = { NULL };
 TaskHandle_t vescanTaskHandle = NULL;
+
+
+/**
+ * @brief  Configures the FDCAN.
+ * @param  None
+ * @retval None
+ */
+static void FDCAN_Config(void) {
+
+	FDCAN_FilterTypeDef sFilterConfig;
+
+	/* Configure Rx filter */
+	sFilterConfig.IdType = FDCAN_EXTENDED_ID;
+	sFilterConfig.FilterIndex = 0;
+	sFilterConfig.FilterType = FDCAN_FILTER_DISABLE; // FDCAN_FILTER_MASK
+	sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+
+//	sFilterConfig.FilterID1 =
+//	sFilterConfig.FilterID2 = 0x1FFF00FF;
+
+	if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK) {
+		Error_Handler();
+	}
+
+	/* Configure global filter:
+	 Filter all remote frames with STD and EXT ID
+	 Reject non matching frames with STD ID and EXT ID */
+//	if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK) {
+//		Error_Handler();
+//	}
+
+	/* Start the FDCAN module */
+	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
+		Error_Handler();
+	}
+
+}
+
+
+/**
+ * @brief  Rx FIFO 0 callback.
+ * @param  hfdcan: pointer to an FDCAN_HandleTypeDef structure that contains
+ *         the configuration information for the specified FDCAN.
+ * @param  RxFifo0ITs: indicates which Rx FIFO 0 interrupts are signalled.
+ *         This parameter can be any combination of @arg FDCAN_Rx_Fifo0_Interrupts.
+ * @retval None
+ */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
+	if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0) {
+		FDCAN_RxHeaderTypeDef RxHeader;
+		uint8_t RxData[8];
+
+		/* Retrieve Rx messages from RX FIFO0 */
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData)
+				!= HAL_OK) {
+			return;
+		}
+
+		if (RxHeader.Identifier == BATTERY0_ID
+				|| RxHeader.Identifier == BATTERY1_ID
+				|| RxHeader.Identifier == BATTERY2_ID) {
+
+			VESC_RawFrame rawFrame;
+			halcan2vesc(&rawFrame, &RxHeader, RxData);
+
+			if (rawFrame.command == VESC_COMMAND_SET_DUTY) {
+				VESC_CommandFrame commandFrame;
+				VESC_ZeroMemory(&commandFrame, sizeof(commandFrame));
+				VESC_convertRawToCmd(&commandFrame, &rawFrame);
+
+//				printf("Received VESC SET DUTY: %.2f \n\r",
+//						commandFrame.commandData);
+				if(commandFrame.commandData < 1.0f){
+					HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
+				}else{
+					HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
+				}
+
+			}
+		}
+
+	}
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -150,17 +240,17 @@ int main(void)
 	DEBUG_LOG("Platform: Custom-G474");
 	DEBUG_LOG("MCU: STM32G474RE Cortex-M4F");
 	DEBUG_LOG("FreeRTOS: Enabled");
-	DEBUG_LOG("Architecture: SMBus + VESCAN tasks with queues");
+
 	DEBUG_LOG("\n--- Creating Application Tasks ---");
 
 
 
     // FDCAN is already initialized by MX_FDCAN1_Init() in main
-	HAL_FDCAN_Start(&hfdcan1);
 
+	FDCAN_Config(); // TODO PROBABLY SHOULD BE CALLED AFTER INITIALIZING TASKS
 
 	/* Initialize VESCAN queues (temporarily disabled for debugging) */
-	// vescanInitQueues();
+//	 vescanInitQueues();
 //	DEBUG_LOG("VESCAN queues initialization skipped (debugging)");
 
 	/* Configure battery monitor task for STM32G474 platform */
@@ -171,21 +261,21 @@ int main(void)
 					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
 					3000,                      // Read battery every 3 seconds
 					"BatteryG474 0",              // Platform-specific task name
-					0x50 						// CAN ID
+					BATTERY0_ID						// CAN ID
 		},
 		{
 					&hi2c2,                    // Use I2C3 peripheral on this platform
 					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
 					3000,                      // Read battery every 3 seconds
 					"BatteryG474 1",              // Platform-specific task name
-					0x51 						// CAN ID
+					BATTERY1_ID 						// CAN ID
 		},
 		{
 					&hi2c4,                    // Use I2C3 peripheral on this platform
 					BATTERY_DEFAULT_ADDRESS,   // Standard BQ40Z80 address (0x0B)
 					3000,                      // Read battery every 3 seconds
 					"BatteryG474 2",              // Platform-specific task name
-					0x52 						// CAN ID
+					BATTERY2_ID 						// CAN ID
 		},
 	};
 
@@ -271,6 +361,8 @@ int main(void)
 	}
   /* USER CODE END 3 */
 }
+
+
 
 /**
   * @brief System Clock Configuration

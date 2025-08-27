@@ -46,6 +46,32 @@
 #endif
 
 #ifdef STM32G474xx
+
+/*
+ *  b0 -> hotswap_master
+    b1 -> hotswap_slaveA
+    b2 -> hotswap_slaveB
+    b3 -> drive_stop
+    b4 -> hotswap_gpio1
+    b5 -> hotswap_gpio2
+    b6 -> hotswap_gpio3
+    b7 -> hotswap_gpio4
+*/
+uint8_t getHotSwapStatus() {
+	uint8_t status = 0;
+	status |= 0b111; // At this moment always on
+
+//	if (HAL_GPIO_ReadPin2(DRIVE_STOP_GPIO_Port, DRIVE_STOP_Pin)) {
+//		status |= 1 << 3;
+//	}
+
+//	if (HAL_GPIO_ReadPin2(DRIVE_STOP_GPIO_Port, DRIVE_STOP_Pin)) {
+//		status |= 1 << 4;
+//	}
+
+	return status;
+}
+
 /**
  * @brief Transmit battery telemetry data via FDCAN using VESC protocol
  * @param telemetry Battery telemetry data to transmit
@@ -65,7 +91,7 @@ static HAL_StatusTypeDef transmitBatteryTelemetryFDCAN(VESC_Id_t canId, const BQ
 	status9.temperature = (float) (telemetry->temperature_01K / 10.f) - 273.15f;
 	status9.charge = (float) telemetry->state_of_charge; // SoC as duty cycle percentage
 	status9.batteryStatus = telemetry->error_code;
-	status9.hotswapStatus = 0;
+	status9.hotswapStatus = getHotSwapStatus();
 
     // Convert to raw VESC frame
     VESC_RawFrame rawFrame;
@@ -93,54 +119,6 @@ static HAL_StatusTypeDef transmitBatteryTelemetryFDCAN(VESC_Id_t canId, const BQ
 }
 #endif
 
-
-/**
- * @brief  Rx FIFO 0 callback.
- * @param  hfdcan: pointer to an FDCAN_HandleTypeDef structure that contains
- *         the configuration information for the specified FDCAN.
- * @param  RxFifo0ITs: indicates which Rx FIFO 0 interrupts are signalled.
- *         This parameter can be any combination of @arg FDCAN_Rx_Fifo0_Interrupts.
- * @retval None
- */
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
-	if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0) {
-		FDCAN_RxHeaderTypeDef RxHeader;
-		uint8_t RxData[8];
-
-		/* Retrieve Rx messages from RX FIFO0 */
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
-			return;
-		}
-
-		VESC_RawFrame rawFrame;
-		halcan2vesc(&rawFrame, &RxHeader, RxData);
-
-		VESC_CommandFrame commandFrame;
-		VESC_ZeroMemory(&commandFrame, sizeof(commandFrame));
-
-		//make sure its command frame
-		switch (rawFrame.command) {
-		case VESC_COMMAND_SET_POS:
-
-			//convert raw frame to VESC_CommandFrame
-			VESC_convertRawToCmd(&commandFrame, &rawFrame);
-
-			break; // its ok, so proceed
-
-		case VESC_COMMAND_SET_RPM:
-
-			break;
-
-		case VESC_COMMAND_SET_DUTY:
-			VESC_convertRawToCmd(&commandFrame, &rawFrame);
-
-			break;
-
-		default:
-			return; // not ok, so YEET
-		}
-	}
-}
 
 /**
  * @brief Battery monitoring task entry point

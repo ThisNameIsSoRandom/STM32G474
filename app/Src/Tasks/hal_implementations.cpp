@@ -277,3 +277,9 @@ __weak HAL_StatusTypeDef HAL_FDCAN_GetRxMessage(FDCAN_HandleTypeDef *hfdcan, uin
                                          FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
 
 }
+
+__weak void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs);
+
+//__weak GPIO_PinState HAL_GPIO_ReadPin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+
+

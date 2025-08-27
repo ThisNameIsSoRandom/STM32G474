@@ -60,7 +60,66 @@ typedef struct CAN_HandleTypeDef CAN_HandleTypeDef;
 #define SMBUS_LAST_FRAME_WITH_PEC          0x00009000U
 #define SMBUS_FIRST_AND_LAST_FRAME_WITH_PEC 0x0000B000U
 
+#define     __IO    volatile             /*!< Defines 'read / write' permissions */
+
+typedef struct
+{
+  __IO uint32_t MODER;       /*!< GPIO port mode register,               Address offset: 0x00      */
+  __IO uint32_t OTYPER;      /*!< GPIO port output type register,        Address offset: 0x04      */
+  __IO uint32_t OSPEEDR;     /*!< GPIO port output speed register,       Address offset: 0x08      */
+  __IO uint32_t PUPDR;       /*!< GPIO port pull-up/pull-down register,  Address offset: 0x0C      */
+  __IO uint32_t IDR;         /*!< GPIO port input data register,         Address offset: 0x10      */
+  __IO uint32_t ODR;         /*!< GPIO port output data register,        Address offset: 0x14      */
+  __IO uint32_t BSRR;        /*!< GPIO port bit set/reset  register,     Address offset: 0x18      */
+  __IO uint32_t LCKR;        /*!< GPIO port configuration lock register, Address offset: 0x1C      */
+  __IO uint32_t AFR[2];      /*!< GPIO alternate function registers,     Address offset: 0x20-0x24 */
+  __IO uint32_t BRR;         /*!< GPIO Bit Reset register,               Address offset: 0x28      */
+} GPIO_TypeDef;
+
+#define GPIO_PIN_0                 ((uint16_t)0x0001)  /* Pin 0 selected    */
+#define GPIO_PIN_1                 ((uint16_t)0x0002)  /* Pin 1 selected    */
+#define GPIO_PIN_2                 ((uint16_t)0x0004)  /* Pin 2 selected    */
+#define GPIO_PIN_3                 ((uint16_t)0x0008)  /* Pin 3 selected    */
+#define GPIO_PIN_4                 ((uint16_t)0x0010)  /* Pin 4 selected    */
+#define GPIO_PIN_5                 ((uint16_t)0x0020)  /* Pin 5 selected    */
+#define GPIO_PIN_6                 ((uint16_t)0x0040)  /* Pin 6 selected    */
+#define GPIO_PIN_7                 ((uint16_t)0x0080)  /* Pin 7 selected    */
+#define GPIO_PIN_8                 ((uint16_t)0x0100)  /* Pin 8 selected    */
+#define GPIO_PIN_9                 ((uint16_t)0x0200)  /* Pin 9 selected    */
+#define GPIO_PIN_10                ((uint16_t)0x0400)  /* Pin 10 selected   */
+#define GPIO_PIN_11                ((uint16_t)0x0800)  /* Pin 11 selected   */
+#define GPIO_PIN_12                ((uint16_t)0x1000)  /* Pin 12 selected   */
+#define GPIO_PIN_13                ((uint16_t)0x2000)  /* Pin 13 selected   */
+#define GPIO_PIN_14                ((uint16_t)0x4000)  /* Pin 14 selected   */
+#define GPIO_PIN_15                ((uint16_t)0x8000)  /* Pin 15 selected   */
+#define GPIO_PIN_All               ((uint16_t)0xFFFF)  /* All pins selected */
+
+#define PERIPH_BASE           (0x40000000UL) /*!< Peripheral base address */
+#define AHB2PERIPH_BASE       (PERIPH_BASE + 0x08000000UL)
+#define GPIOA_BASE            (AHB2PERIPH_BASE + 0x0000UL)
+#define GPIOA               ((GPIO_TypeDef *) GPIOA_BASE)
 #endif /* HAL_MODULE_ENABLED */
+
+#define RELAY_Pin GPIO_PIN_1
+#define RELAY_GPIO_Port GPIOA
+#define DRIVE_STOP_Pin GPIO_PIN_2
+#define DRIVE_STOP_GPIO_Port GPIOA
+#define LED_CAN_OK_Pin GPIO_PIN_5
+#define LED_CAN_OK_GPIO_Port GPIOA
+#define LED_CAN_ERROR_Pin GPIO_PIN_6
+#define LED_CAN_ERROR_GPIO_Port GPIOA
+#define SMB3C_Pin GPIO_PIN_6
+#define SMB3C_GPIO_Port GPIOC
+#define SMB3D_Pin GPIO_PIN_7
+#define SMB3D_GPIO_Port GPIOC
+#define SMB1C_Pin GPIO_PIN_8
+#define SMB1C_GPIO_Port GPIOC
+#define SMB1D_Pin GPIO_PIN_9
+#define SMB1D_GPIO_Port GPIOC
+#define SMB2D_Pin GPIO_PIN_8
+#define SMB2D_GPIO_Port GPIOA
+#define SMB2C_Pin GPIO_PIN_9
+#define SMB2C_GPIO_Port GPIOA
 
 // I2C states - Only define if real HAL not present
 #ifndef HAL_I2C_MODULE_ENABLED
@@ -264,6 +323,7 @@ HAL_StatusTypeDef HAL_FDCAN_AddMessageToTxFifoQ(FDCAN_HandleTypeDef *hfdcan, FDC
 
 // FreeRTOS functions - platform will provide implementations
 void HAL_Delay_MS(uint32_t ms);
+
 
 #ifdef __cplusplus
 }

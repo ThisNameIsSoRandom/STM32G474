@@ -41,6 +41,9 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+#define BATTERY0_ID 0xA1
+#define BATTERY1_ID 0xA2
+#define BATTERY2_ID 0xA3
 
 /* USER CODE END EC */
 

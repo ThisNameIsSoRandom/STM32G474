@@ -82,6 +82,12 @@ HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart);
 // FreeRTOS functions - platform will provide implementations
 void HAL_Delay_MS(uint32_t ms);
 
+typedef enum
+{
+  GPIO_PIN_RESET = 0U,
+  GPIO_PIN_SET
+} GPIO_PinState2;
+
 #ifdef __cplusplus
 }
 #endif
